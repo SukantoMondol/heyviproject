@@ -1,0 +1,263 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    'Noto Sans Arabic', 'Tahoma', 'Arial Unicode MS', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f5f5f5;
+  height: 100vh;
+  height: 100dvh;
+  width: 100vw;
+  overflow: auto;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hide scrollbars globally but keep scrolling enabled */
+html, body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* Add RTL support for Arabic language - text direction only */
+[dir="rtl"] {
+  direction: rtl;
+  font-family: 'Noto Sans Arabic', 'Tahoma', 'Arial Unicode MS', 'Segoe UI', sans-serif;
+}
+
+/* Arabic text specific styling */
+[dir="rtl"] * {
+  font-family: 'Noto Sans Arabic', 'Tahoma', 'Arial Unicode MS', 'Segoe UI', sans-serif;
+}
+
+/* Ensure Arabic text renders properly */
+[lang="ar"], [dir="rtl"] {
+  font-family: 'Noto Sans Arabic', 'Tahoma', 'Arial Unicode MS', 'Segoe UI', sans-serif;
+  font-feature-settings: 'liga' 1, 'kern' 1;
+  text-rendering: optimizeLegibility;
+}
+
+[dir="rtl"] .main-content {
+  direction: rtl;
+}
+
+[dir="rtl"] .bottom-navigation {
+  direction: rtl;
+  font-family: 'Noto Sans Arabic', 'Tahoma', 'Arial Unicode MS', 'Segoe UI', sans-serif;
+}
+
+[dir="rtl"] .bottom-navigation .nav-item span {
+  font-family: 'Noto Sans Arabic', 'Tahoma', 'Arial Unicode MS', 'Segoe UI', sans-serif;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60px;
+}
+
+/* RTL text direction only - keep navigation layout the same */
+[dir="rtl"] .nav-item span {
+  text-align: center;
+}
+
+/* Keep navigation layout the same - only text direction changes */
+
+/* Keep floating buttons in same position */
+
+/* RTL support for form elements */
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: right;
+}
+
+/* RTL support for buttons */
+[dir="rtl"] button {
+  direction: rtl;
+}
+
+/* RTL support for navigation */
+[dir="rtl"] .nav-item {
+  flex-direction: row-reverse;
+}
+
+/* RTL support for cards and content */
+[dir="rtl"] .card,
+[dir="rtl"] .content-section {
+  direction: rtl;
+}
+
+/* RTL support for lists */
+[dir="rtl"] ul,
+[dir="rtl"] ol {
+  padding-right: 20px;
+  padding-left: 0;
+}
+
+/* RTL support for icons and badges */
+[dir="rtl"] .icon {
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+[dir="rtl"] .badge {
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+/* RTL support for progress bars */
+[dir="rtl"] .progress-bar {
+  direction: rtl;
+}
+
+/* RTL support for modals */
+[dir="rtl"] .modal-content {
+  direction: rtl;
+}
+
+/* RTL support for dropdowns */
+[dir="rtl"] .dropdown-menu {
+  right: auto;
+  left: 0;
+}
+
+/* RTL support for tooltips */
+[dir="rtl"] .tooltip {
+  direction: rtl;
+}
+
+/* RTL support for notifications */
+[dir="rtl"] .toast {
+  direction: rtl;
+}
+
+/* RTL support for search bars */
+[dir="rtl"] .search-bar {
+  direction: rtl;
+}
+
+[dir="rtl"] .search-bar input {
+  text-align: right;
+}
+
+/* RTL support for headers */
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6 {
+  text-align: right;
+  font-family: 'Noto Sans Arabic', 'Tahoma', 'Arial Unicode MS', 'Segoe UI', sans-serif;
+}
+
+/* App header specific RTL support */
+[dir="rtl"] .dashboard-header,
+[dir="rtl"] .app-title {
+  font-family: 'Noto Sans Arabic', 'Tahoma', 'Arial Unicode MS', 'Segoe UI', sans-serif;
+  text-align: right;
+}
+
+/* RTL text direction only - keep layout the same */
+[dir="rtl"] .app-title {
+  text-align: right;
+}
+
+/* RTL support for paragraphs */
+[dir="rtl"] p {
+  text-align: right;
+}
+
+/* RTL support for links */
+[dir="rtl"] a {
+  direction: rtl;
+}
+
+/* RTL support for tables */
+[dir="rtl"] table {
+  direction: rtl;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+  text-align: right;
+}
+
+/* RTL support for flex containers */
+[dir="rtl"] .flex-container {
+  direction: rtl;
+}
+
+/* RTL support for grid containers */
+[dir="rtl"] .grid-container {
+  direction: rtl;
+}
+
+/* RTL support for spacing utilities */
+[dir="rtl"] .ml-auto {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+[dir="rtl"] .mr-auto {
+  margin-right: 0 !important;
+  margin-left: auto !important;
+}
+
+[dir="rtl"] .pl-0 {
+  padding-left: 0 !important;
+}
+
+[dir="rtl"] .pr-0 {
+  padding-right: 0 !important;
+}
+
+/* RTL support for text alignment utilities */
+[dir="rtl"] .text-left {
+  text-align: right !important;
+}
+
+[dir="rtl"] .text-right {
+  text-align: left !important;
+}
+
+/* RTL support for float utilities */
+[dir="rtl"] .float-left {
+  float: right !important;
+}
+
+[dir="rtl"] .float-right {
+  float: left !important;
+}

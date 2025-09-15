@@ -1,0 +1,344 @@
+.snap-container.sim-fullscreen {
+  height: 100vh !important;
+}
+
+.fullscreen-mode .global-app-bar,
+.fullscreen-mode .bottom-navigation {
+  display: none !important;
+}
+
+/* Ensure proper mobile viewport handling */
+.fullscreen-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw !important;
+  height: 100vh;
+  z-index: 9999;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+/* Global reset for video feed */
+* {
+  box-sizing: border-box;
+}
+
+.snap-container,
+.snap-container *,
+.snap-container section,
+.snap-container section * {
+  box-sizing: border-box;
+}
+
+/* Override GlobalLayout padding for video feed */
+.fullscreen-mode .content-container {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.fullscreen-mode .global-layout-container {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.snap-container {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.snap-container section {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+.snap-container section > div {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+
+/* Prevent bounce scrolling */
+.fullscreen-mode {
+  overscroll-behavior: none;
+}
+
+.snap-container {
+  overscroll-behavior: none;
+}
+
+.snap-container.sim-fullscreen {
+  overscroll-behavior: none;
+}
+
+
+.ef-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+.ef-back, .ef-mute {
+  position: absolute;
+  top: 16px;
+  background: rgba(0,0,0,0.35);
+  border: none;
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+.ef-back { left: 12px; }
+.ef-mute { right: 12px; }
+
+.ef-bottom {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 16px;
+  pointer-events: none;
+}
+.ef-title {
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.6);
+  margin-bottom: 8px;
+}
+.ef-progress {
+  height: 3px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.ef-progress-fill {
+  height: 100%;
+  background: #FF6407;
+  width: 0%;
+  transition: width 150ms linear;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Pause controls */
+.ef-pause-controls {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 20px;
+  pointer-events: auto;
+}
+
+.ef-control-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.ef-control-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.ef-control-btn:active {
+  transform: scale(0.95);
+}
+
+
+/* Skip indicator for double tap */
+.ef-skip-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 40px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  animation: ef-skip-pulse 0.3s ease-out;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.ef-skip-forward {
+  right: 20%;
+  left: auto;
+  transform: translateY(-50%);
+  animation: ef-skip-pulse-forward 0.3s ease-out;
+}
+
+.ef-skip-backward {
+  left: 20%;
+  right: auto;
+  transform: translateY(-50%);
+  animation: ef-skip-pulse-backward 0.3s ease-out;
+}
+
+.ef-skip-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.ef-skip-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes ef-skip-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes ef-skip-pulse-forward {
+  0% {
+    transform: translateY(-50%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-50%) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes ef-skip-pulse-backward {
+  0% {
+    transform: translateY(-50%) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(-50%) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* End popup */
+.ef-end-popup {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  backdrop-filter: blur(5px);
+}
+
+.ef-end-popup-content {
+  text-align: center;
+  color: #fff;
+}
+
+.ef-end-timer {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.ef-end-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.ef-end-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 25px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.ef-end-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.ef-end-btn:active {
+  transform: translateY(0);
+}
+
+.ef-end-next-btn {
+  background: rgba(255, 100, 7, 0.8);
+  border-color: rgba(255, 100, 7, 0.5);
+}
+
+.ef-end-next-btn:hover {
+  background: rgba(255, 100, 7, 0.9);
+  border-color: rgba(255, 100, 7, 0.7);
+}
+
+

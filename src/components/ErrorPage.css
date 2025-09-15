@@ -1,0 +1,286 @@
+/* Error Page Styles */
+.error-container {
+  width: 100%;
+  min-height: 100vh;
+  background: #FFFFFF;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Status Bar */
+.status-bar {
+  padding: 21px 0 0;
+  height: 76px;
+  width: 100%;
+}
+
+.status-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 134px;
+  height: 100%;
+  padding: 0;
+}
+
+.time-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 0 16px;
+  flex: 1;
+}
+
+.time {
+  font-family: 'SF Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 590;
+  font-size: 17px;
+  line-height: 1.29;
+  text-align: center;
+  color: #000000;
+}
+
+.dynamic-island-spacer {
+  width: 124px;
+  height: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.levels-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  padding: 0 16px 0 6px;
+  flex: 1;
+}
+
+.cellular-icon,
+.wifi-icon {
+  color: #000000;
+}
+
+.cellular-icon {
+  width: 19.2px;
+  height: 12.23px;
+}
+
+.wifi-icon {
+  width: 17.14px;
+  height: 12.33px;
+}
+
+.battery-container {
+  position: relative;
+  width: 27.33px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.battery-border {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 25px;
+  height: 13px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 4.3px;
+}
+
+.battery-cap {
+  position: absolute;
+  right: 0;
+  top: 4.78px;
+  width: 1.33px;
+  height: 4.08px;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.battery-capacity {
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 21px;
+  height: 9px;
+  background: #000000;
+  border-radius: 2.5px;
+}
+
+/* Error Content */
+.error-content {
+  width: 100%;
+  max-width: 420px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  box-shadow: 0px 4px 8px 0px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  text-align: center;
+  gap: 24px;
+}
+
+.error-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+}
+
+/* Error Icon */
+.error-icon-container {
+  width: 96px;
+  height: 96px;
+}
+
+.error-icon-background {
+  width: 96px;
+  height: 96px;
+  background: #FFF7ED;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-icon {
+  width: 60px;
+  height: 60.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Error Text */
+.error-code {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 40px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #F97316;
+  margin: 8px 0 0;
+}
+
+.error-message {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.4;
+  color: #1F2937;
+  margin: 4px 0 0;
+}
+
+.error-description {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.7;
+  text-align: center;
+  color: #4B5563;
+  margin: 4px 0 0;
+}
+
+/* Go Home Button */
+.go-home-button {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(90deg, #FF9800 0%, #FFB347 100%);
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0px 4px 6px 0px rgba(0, 0, 0, 0.1), 0px 2px 4px 0px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.go-home-button:hover {
+  background: linear-gradient(90deg, #F57C00 0%, #FF9800 100%);
+  transform: translateY(-1px);
+  box-shadow: 0px 6px 8px 0px rgba(0, 0, 0, 0.15), 0px 3px 6px 0px rgba(0, 0, 0, 0.1);
+}
+
+.go-home-button:active {
+  transform: translateY(0);
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.1);
+}
+
+.button-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.2;
+  text-align: center;
+  color: #FFFFFF;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .error-container {
+    width: 100vw;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+  
+  .error-content {
+    width: calc(100vw - 40px);
+  }
+  
+  .error-section {
+    width: 100%;
+  }
+  
+  .go-home-button {
+    width: 100%;
+  }
+}
+
+/* Loading animation for when navigating */
+.error-container.loading {
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.error-container.loading .go-home-button {
+  background: linear-gradient(90deg, #CCCCCC 0%, #DDDDDD 100%);
+  cursor: not-allowed;
+}
+
+/* Accessibility improvements */
+.go-home-button:focus {
+  outline: 2px solid #FF9800;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .go-home-button:hover {
+    transform: none;
+  }
+  
+  .go-home-button:active {
+    transform: none;
+  }
+}

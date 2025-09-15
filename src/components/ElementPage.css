@@ -1,0 +1,325 @@
+.element-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.ep-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+
+.ep-header .title { font-weight: 700; }
+.icon-button { background: none; border: none; font-size: 18px; padding: 8px; }
+.ep-header .actions { display: flex; gap: 8px; }
+
+.ep-hero { 
+  position: relative; 
+  width: 100%; 
+  padding: 0 16px;
+}
+.ep-hero-img { 
+  width: 100%; 
+  height: auto; 
+  display: block; 
+  border-radius: 12px; 
+}
+.ep-video-wrapper { 
+  width: 100%; 
+  display: block; 
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+  position: relative;
+  margin-top: 12px;
+}
+.ep-video { 
+  max-width: 100%; 
+  height: auto; 
+  display: block; 
+  border-radius: 12px; 
+}
+.ep-video-overlay { 
+  position: absolute; 
+  left: 0; 
+  right: 0; 
+  bottom: 0; 
+  padding: 8px 10px; 
+  opacity: 0; 
+  transition: opacity 0.3s ease; 
+  background: linear-gradient(transparent, rgba(0,0,0,0.3));
+}
+.ep-video-overlay.show { 
+  opacity: 1; 
+}
+.ep-video-overlay .progress { height: 6px; background: rgba(255,255,255,0.4); }
+.ep-video-overlay .progress .bar { background: #ff6b00; }
+.ep-hero-badges-left { position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; align-items: center; }
+.element-page .badge { background: transparent; color: #fff; padding: 0; border-radius: 999px; font-size: 12px; text-shadow: 0 1px 2px rgba(0,0,0,0.35); }
+.element-page .fav { background: #fff; border: none; width: 36px; height: 36px; border-radius: 18px; font-size: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+.element-page .fav.active { color: #ff6b00; }
+.hero-play { 
+  position: absolute; 
+  left: 50%; 
+  top: 50%; 
+  transform: translate(-50%, -50%); 
+  background: none; 
+  border: none; 
+}
+
+.ep-card { background: #fff; margin: 0 4px; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.ep-title { margin: 0 0 8px; font-size: 20px; }
+.ep-title-block { border-radius: 0 0 16px 16px; }
+.ep-meta { display: flex; gap: 16px; color: #666; font-size: 12px; margin-bottom: 8px; align-items: center; }
+.ep-meta .meta { display: inline-flex; align-items: center; gap: 6px; color: #6B7280; }
+.ep-meta .meta--duration { color: #EA580C; }
+.ep-tags { display: flex; gap: 8px; margin-bottom: 8px; }
+.chip { background: #f2f2f2; padding: 6px 10px; border-radius: 999px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.chip-beginner { background: #FFF7ED; color: #EA580C; }
+.chip-safety { background: #F3F4F6; color: #374151; }
+.ep-desc { color: #333; font-size: 14px; line-height: 1.4; }
+.progress { width: 100%; height: 8px; background: #f2f2f2; border-radius: 6px; overflow: hidden; margin: 8px 0; }
+.progress .bar { height: 100%; background: #ff6b00; }
+
+.section-title { font-weight: 700; padding: 0 16px; margin-top: 8px; margin-bottom: 8px; }
+.steps-list { display: flex; flex-direction: column; gap: 8px; padding: 0 12px; }
+.step-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 12px; }
+.step-item.active { border-color: #ff6b00; box-shadow: 0 0 0 2px rgba(255,107,0,0.1); }
+.step-item-clickable { 
+  cursor: pointer; 
+  transition: all 0.2s ease; 
+  border: 1px solid #eee; 
+  background: #fff;
+}
+.step-item-clickable:hover { 
+  border-color: #ff6b00; 
+  box-shadow: 0 2px 8px rgba(255,107,0,0.15); 
+  transform: translateY(-1px);
+}
+.step-item-clickable:active { 
+  transform: translateY(0); 
+  box-shadow: 0 1px 4px rgba(255,107,0,0.2);
+}
+.step-index { width: 28px; height: 28px; border-radius: 14px; background: #ffeddc; color: #ff6b00; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.step-name { flex: 1; text-align: left; padding: 0 10px; }
+.step-time { 
+  font-size: 12px; 
+  color: #6b7280; 
+  font-weight: 500; 
+  margin-right: 8px;
+}
+.step-dot { opacity: 0.4; }
+
+.ep-related { padding-bottom: 16px; }
+.related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 12px; }
+.related-card { background: #fff; border: 1px solid #eee; border-radius: 12px; overflow: hidden; text-align: left; }
+.related-card img { width: 100%; height: 110px; object-fit: cover; display: block; }
+.related-name { padding: 8px; font-size: 13px; }
+
+.loading-screen, .error-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0; }
+.spinner { width: 28px; height: 28px; border: 3px solid #eee; border-top-color: #ff6b00; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Centered Play Button Overlay */
+.centered-play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.centered-play-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  opacity: 0.9;
+}
+
+.centered-play-button:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.centered-play-button:active {
+  transform: scale(0.95);
+}
+
+.centered-play-button svg {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+/* Centered Replay Button Overlay */
+.centered-replay-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+}
+
+/* Enhanced Video Controls */
+.video-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+
+.time-display {
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.progress.clickable {
+  cursor: pointer;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.progress-bar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF6B00 0%, #FF8533 100%);
+  border-radius: 3px;
+  transition: width 0.1s ease;
+  position: relative;
+}
+
+.progress-handle {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.progress.clickable:hover .progress-handle,
+.progress.clickable:active .progress-handle {
+  opacity: 1;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .progress.clickable {
+    min-height: 24px; /* Larger touch target */
+  }
+  
+  .progress-handle {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .time-display {
+    font-size: 14px;
+  }
+  
+  .centered-play-button svg {
+    width: 72px;
+    height: 72px;
+  }
+  
+  .centered-replay-overlay .replay-button svg {
+    width: 72px;
+    height: 72px;
+  }
+  
+  .replay-text {
+    font-size: 16px;
+  }
+}
+
+/* Video Ended Overlay */
+.video-ended-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+}
+
+.replay-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.replay-text {
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-align: center;
+}
+
+.replay-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.replay-button:hover {
+  transform: scale(1.1);
+  background: rgba(255,255,255,0.1);
+}
+
+.replay-button:active {
+  transform: scale(0.95);
+}
+
+.replay-button svg {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+

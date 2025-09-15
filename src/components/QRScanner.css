@@ -1,0 +1,569 @@
+/* QR Scanner Modal Styles */
+.qr-scanner-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: #000000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 2147483647 !important; /* ensure above any app stacking context */
+  padding: 0 !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  margin: 0 !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Prevent page scroll while scanner open */
+body.qr-scroll-lock {
+  overflow: hidden !important;
+  touch-action: none !important;
+}
+
+/* Desktop positioning fix */
+@media (min-width: 481px) {
+  .qr-scanner-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    outline: none !important;
+    z-index: 2147483647 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  .qr-scanner-modal {
+    position: relative !important;
+    z-index: 2147483648 !important;
+    transform: none !important;
+    top: auto !important;
+    left: auto !important;
+  }
+}
+
+.qr-scanner-modal {
+  background: white;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  animation: slideUp 0.3s ease-out;
+  position: relative;
+  z-index: 2147483647;
+  margin: auto;
+  display: block;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.qr-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.topbar {
+  display: flex;
+  gap: 12px;
+  background: #f8f9fa;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+}
+
+.topbar-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  color: #666;
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.topbar-btn.active {
+  color: #FF6407;
+}
+
+.qr-scanner-header h2 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.qr-scanner-content {
+  flex: 1;
+  position: relative;
+  background: #f8f9fa;
+  height: 400px;
+  border-radius: 0 0 20px 20px;
+}
+
+.qr-scanner-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+}
+
+.qr-scanner-error p {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.qr-scanner-error button {
+  background: #EA580C;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.qr-scanner-error button:hover {
+  background: #DC2626;
+}
+
+.qr-scanner-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #FFFFFF;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #EA580C;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.qr-scanner-loading p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.qr-scanner-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* html5-qrcode custom styles */
+#qr-reader {
+  width: 100% !important;
+  height: 100% !important;
+  border: none !important;
+  background: transparent !important;
+}
+
+#qr-reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+}
+
+/* Ensure canvases created by html5-qrcode also fill and cover */
+#qr-reader canvas,
+#qr-reader__scan_region canvas,
+#qr-reader__dashboard canvas {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+
+#qr-reader__scan_region {
+  background: transparent !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#qr-reader__scan_region {
+  background: transparent !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#qr-reader__scan_region > img {
+  display: none !important;
+}
+
+#qr-reader__dashboard {
+  display: none !important;
+}
+
+#qr-reader__dashboard_section {
+  display: none !important;
+}
+
+#qr-reader__dashboard_section_csr {
+  display: none !important;
+}
+
+#qr-reader__status_span {
+  display: none !important;
+}
+
+#qr-reader__camera_selection {
+  display: none !important;
+}
+
+#qr-reader__camera_permission_button {
+  display: none !important;
+}
+
+#qr-reader__camera_permission_button_id {
+  display: none !important;
+}
+
+#qr-reader__file_scan_button {
+  display: none !important;
+}
+
+#qr-reader__file_input {
+  display: none !important;
+}
+
+#qr-reader__file_input_label {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_2 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_3 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_4 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_5 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_6 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_7 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_8 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_9 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_10 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_11 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_12 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_13 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_14 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_15 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_16 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_17 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_18 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_19 {
+  display: none !important;
+}
+
+#qr-reader__file_input_label_span_20 {
+  display: none !important;
+}
+
+/* Custom overlay frame */
+.qr-scanner-overlay-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
+  height: 260px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.qr-scanner-corner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 3px solid #EA580C;
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  background: #FF6407;
+  border-radius: 2px;
+  filter: drop-shadow(0 0 6px rgba(255,100,7,.75));
+  animation: scan-move 2.2s ease-in-out infinite;
+}
+
+@keyframes scan-move {
+  0% { transform: translateY(-120px); opacity: .8; }
+  50% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(120px); opacity: .8; }
+}
+
+.qr-scanner-corner.top-left {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+
+.qr-scanner-corner.top-right {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+}
+
+.qr-scanner-corner.bottom-left {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+}
+
+.qr-scanner-corner.bottom-right {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+}
+
+.qr-scanner-bottom-ui {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 15;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px;
+}
+
+.zoom-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,.16);
+  color: #fff;
+  font-size: 18px;
+}
+
+.zoom-slider {
+  -webkit-appearance: none;
+  width: 260px;
+  height: 4px;
+  background: rgba(255,255,255,.3);
+  border-radius: 999px;
+}
+
+.capture-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  background: #FF6407;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(255,100,7,.45);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .qr-scanner-overlay {
+    padding: 10px;
+  }
+  
+  .qr-scanner-modal {
+    max-width: 100%;
+    max-height: 95vh;
+  }
+  
+  .qr-scanner-header {
+    padding: 16px 20px;
+  }
+  
+  .qr-scanner-header h2 {
+    font-size: 16px;
+  }
+  
+  .qr-scanner-content {
+    min-height: 250px;
+  }
+  
+  #qr-reader {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  
+  .qr-scanner-overlay-frame {
+    width: 220px;
+    height: 220px;
+  }
+  
+  .qr-scanner-corner {
+    width: 25px;
+    height: 25px;
+    border-width: 2px;
+  }
+  
+  .qr-scanner-footer {
+    padding: 12px 20px;
+  }
+  
+  .qr-scanner-footer p {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 360px) {
+  .qr-scanner-overlay-frame {
+    width: 180px;
+    height: 180px;
+  }
+  
+  .qr-scanner-corner {
+    width: 20px;
+    height: 20px;
+  }
+}
