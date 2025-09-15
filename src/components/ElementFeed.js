@@ -78,11 +78,21 @@ const ElementFeed = () => {
   const singleTapTimeout = useRef(null);
   const videoRefs = useRef([]);
   const [videoErrors, setVideoErrors] = useState({});
+  const hlsInstancesRef = useRef({});
 
   // Normalize media URLs to avoid common issues (protocol-less, missing /api prefix)
   const normalizeMediaUrl = (raw) => {
     if (!raw) return '';
     let url = String(raw).trim();
+    // Encode spaces and unsafe chars in path without breaking protocol
+    try {
+      const u = new URL(url, /^https?:\/\//i.test(url) ? undefined : 'https://dummy');
+      u.pathname = u.pathname
+        .split('/')
+        .map(seg => encodeURIComponent(decodeURIComponent(seg)))
+        .join('/');
+      url = u.href.replace('https://dummy', '');
+    } catch (_) {}
     if (!/^https?:\/\//i.test(url)) {
       if (url.startsWith('//')) url = `https:${url}`; else if (url.startsWith('/')) url = url; else url = `https://${url}`;
     }
@@ -223,18 +233,21 @@ const ElementFeed = () => {
     if (!elements.length) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const vid = entry.target;
-          if (!(vid instanceof HTMLVideoElement)) return;
-          const idxAttr = vid.getAttribute('data-idx');
-          const idxNum = Number(idxAttr);
-          if (entry.isIntersecting && entry.intersectionRatio > 0.6 && Number.isFinite(idxNum)) {
-            // Make this the active index; a separate effect will handle play/pause
-            setActiveIndex(idxNum);
-          }
-        });
-      },
+      (() => {
+        let pending = null;
+        return (entries) => {
+          entries.forEach((entry) => {
+            const vid = entry.target;
+            if (!(vid instanceof HTMLVideoElement)) return;
+            const idxAttr = vid.getAttribute('data-idx');
+            const idxNum = Number(idxAttr);
+            if (entry.isIntersecting && entry.intersectionRatio > 0.6 && Number.isFinite(idxNum)) {
+              if (pending) clearTimeout(pending);
+              pending = setTimeout(() => setActiveIndex(idxNum), 100); // debounce 100ms
+            }
+          });
+        };
+      })(),
       { threshold: [0, 0.6, 1] }
     );
 
@@ -578,7 +591,8 @@ const ElementFeed = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 18,
-                    padding: '24px'
+                    padding: '24px',
+                    background: '#2D1653'
                   }}
                 >
                   {/* Header spacing removed to center content vertically */}
@@ -588,8 +602,8 @@ const ElementFeed = () => {
                   <div
                     style={{
                       width: '100%',
-                      maxWidth: 780,
-                      aspectRatio: '16/9',
+                      maxWidth: 420,
+                      aspectRatio: '3/4',
                       backgroundImage: `url(${normalizeMediaUrl(lesson.url_thumbnail)})`,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
@@ -599,22 +613,7 @@ const ElementFeed = () => {
                       position: 'relative'
                     }}
                   >
-                    {/* Play overlay icon for visual parity */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'linear-gradient(0deg, rgba(0,0,0,0.35), rgba(0,0,0,0.35))'
-                      }}
-                    >
-                      <svg width="84" height="84" viewBox="0 0 80 80" fill="none">
-                        <circle cx="40" cy="40" r="40" fill="rgba(255,255,255,0.95)" />
-                        <path d="M32 25L55 40L32 55V25Z" fill="#FF6407" />
-                      </svg>
-                    </div>
+                    {/* static image only per Figma: remove play overlay */}
                   </div>
 
                   {/* Question and input/buttons based on challenge_type */}
@@ -650,18 +649,20 @@ const ElementFeed = () => {
                       );
                     })()}
                     <div style={{
-                      background: '#fff',
-                      borderRadius: 16,
-                      padding: '16px 18px',
-                      marginTop: 16
+                      padding: '4px 8px',
+                      marginTop: 18,
+                      textAlign: 'left'
                     }}>
-                      <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 8 }}>Q #1</div>
-                      <div style={{ color: '#111827', fontSize: 20, fontWeight: 700, marginBottom: 14 }}>
-                        {lesson?.question || t('challengeQuestion')}
+                      <div style={{ color: '#E5E7EB', fontSize: 12, marginBottom: 6, fontWeight: 700 }}>Q #1</div>
+                      <div style={{ color: '#FFFFFF', fontSize: 20, fontWeight: 800, marginBottom: 14, lineHeight: 1.2 }}>
+                        {(() => {
+                          const q = String(lesson?.question || t('challengeQuestion') || '').trim();
+                          return /[?！？]$/.test(q) ? q : `${q}?`;
+                        })()}
                       </div>
                       {/* challenge_type 0 = yes/no; 1 = free text */}
                       {Number(lesson?.challenge_type ?? 0) === 0 ? (
-                      <div style={{ display: 'flex', gap: 12 }}>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                         <button
                           onClick={async () => {
                             const correct = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
@@ -690,12 +691,16 @@ const ElementFeed = () => {
                           }}
                           style={{
                             flex: 1,
-                            background: '#22c55e',
+                            maxWidth: 240,
+                            background: '#E74A3B',
                             color: '#fff',
                             border: 0,
-                            borderRadius: 10,
-                            padding: '12px 16px',
-                            fontWeight: 700
+                            borderRadius: 12,
+                            padding: '10px 12px',
+                            fontWeight: 700,
+                            fontSize: 14,
+                            boxShadow: '0 6px 12px rgba(231,74,59,0.28)',
+                            border: '1px solid rgba(255,255,255,0.18)'
                           }}
                           aria-label="Yes"
                         >
@@ -726,12 +731,16 @@ const ElementFeed = () => {
                           }}
                           style={{
                             flex: 1,
-                            background: '#ef4444',
+                            maxWidth: 240,
+                            background: '#36B24A',
                             color: '#fff',
                             border: 0,
-                            borderRadius: 10,
-                            padding: '12px 16px',
-                            fontWeight: 700
+                            borderRadius: 12,
+                            padding: '10px 12px',
+                            fontWeight: 700,
+                            fontSize: 14,
+                            boxShadow: '0 6px 12px rgba(54,178,74,0.28)',
+                            border: '1px solid rgba(255,255,255,0.18)'
                           }}
                           aria-label="No"
                         >
@@ -782,15 +791,36 @@ const ElementFeed = () => {
                                 else setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
                               }
                             }}
-                            style={{ background: '#111827', color: '#fff', border: 0, borderRadius: 10, padding: '12px 16px', fontWeight: 700 }}
+                            style={{ background: '#111827', color: '#fff', border: 0, borderRadius: 12, padding: '14px 18px', fontWeight: 800 }}
                           >
                             {t('submitAnswer') || 'Submit'}
                           </button>
                         </div>
                       )}
                       {/* Hint row */}
-                      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#6b7280', fontSize: 13, background: '#F3F4F6', borderRadius: 999, padding: '8px 12px' }}>
-                        <span role="img" aria-label="hint">💡</span> {t('needHint') || 'Need a hint?'}
+                      <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{
+                          background: '#FFFFFF',
+                          borderRadius: 14,
+                          padding: '18px 22px',
+                          width: '100%',
+                          maxWidth: 420,
+                          boxShadow: '0 10px 28px rgba(0,0,0,0.22)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 10,
+                          color: '#111827',
+                          fontWeight: 800,
+                          fontSize: 16
+                        }}>
+                          <span role="img" aria-label="hint">💡</span>
+                          {(() => {
+                            const raw = String(t('needHint') || 'Need a hint?').trim();
+                            const cap = raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : 'Need a hint?';
+                            return /[?！？]$/.test(cap) ? cap : `${cap}?`;
+                          })()}
+                        </div>
                       </div>
 
                       {/* Inline retry options when there is no failure video */}
@@ -826,7 +856,8 @@ const ElementFeed = () => {
                     const playing = challengeState[idx]?.playing;
                     const overlayUrl = playing === 'success' ? successUrl : playing === 'failure' ? failureUrl : '';
                     return playing && overlayUrl ? (
-                    <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999 }}>
+                    <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999 }} onMouseDown={(e)=>e.stopPropagation()} onTouchStart={(e)=>e.stopPropagation()}>
+                      {(() => { try { document.body.style.overflow = 'hidden'; } catch (_) {} return null; })()}
                       <video
                         src={overlayUrl}
                         poster={normalizeMediaUrl(lesson?.url_thumbnail)}
@@ -846,6 +877,7 @@ const ElementFeed = () => {
                           }
                         }}
                         onEnded={() => {
+                          try { document.body.style.overflow = ''; } catch (_) {}
                           if (challengeState[idx]?.playing === 'success') {
                             // Continue to the next video
                             setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: null } }));
@@ -897,7 +929,7 @@ const ElementFeed = () => {
               <video
                 ref={(el) => (videoRefs.current[idx] = el)}
                 data-idx={idx}
-                src={normalizeMediaUrl(lesson.url_element)}
+                src={/\.m3u8(\?|$)/i.test(String(lesson.url_element || '')) ? undefined : normalizeMediaUrl(lesson.url_element)}
                 poster={normalizeMediaUrl(lesson.url_thumbnail)}
                 playsInline
                 muted={isMuted}
@@ -962,6 +994,41 @@ const ElementFeed = () => {
                   lastTapY.current = y;
                 }}
                 autoPlay={idx === startIndex}
+                onLoadedMetadata={() => {
+                  // HLS fallback if needed
+                  const src = String(lesson.url_element || '');
+                  const isHls = /\.m3u8(\?|$)/i.test(src);
+                  const video = videoRefs.current[idx];
+                  if (!isHls || !video) return;
+                  try {
+                    const canPlayNative = video.canPlayType('application/vnd.apple.mpegURL');
+                    if (canPlayNative === 'probably' || canPlayNative === 'maybe') {
+                      video.src = normalizeMediaUrl(src);
+                      return;
+                    }
+                    // Dynamic import hls.js only when needed
+                    import('hls.js').then((mod) => {
+                      const Hls = mod.default || mod;
+                      if (Hls && Hls.isSupported()) {
+                        if (hlsInstancesRef.current[idx]) {
+                          try { hlsInstancesRef.current[idx].destroy(); } catch (_) {}
+                        }
+                        const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+                        hls.attachMedia(video);
+                        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+                          hls.loadSource(normalizeMediaUrl(src));
+                        });
+                        hlsInstancesRef.current[idx] = hls;
+                      } else {
+                        // Fallback: set src anyway and hope the browser can play
+                        video.src = normalizeMediaUrl(src);
+                      }
+                    }).catch(() => {
+                      // Last resort
+                      try { video.src = normalizeMediaUrl(src); } catch (_) {}
+                    });
+                  } catch (_) {}
+                }}
                 onError={(e) => {
                   const err = e?.currentTarget?.error;
                   const code = err?.code || 'unknown';
