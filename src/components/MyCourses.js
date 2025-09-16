@@ -190,8 +190,16 @@ const MyCourses = () => {
       
       // Do not inject demo items; reflect backend results exactly
       
+      // Keep ONLY real collections (exclude single elements)
+      const onlyCollections = transformedCourses.filter((c) => {
+        const hid = String(c?.hash_id || '');
+        const typeNum = Number(c?.type);
+        if (hid.startsWith('el-')) return false;
+        return hid.startsWith('col-') || typeNum === 2;
+      });
+
       // Sort courses by order field to maintain proper sequence
-      const sortedCourses = transformedCourses.sort((a, b) => {
+      const sortedCourses = onlyCollections.sort((a, b) => {
         const orderA = parseInt(a?.order) || 999999;
         const orderB = parseInt(b?.order) || 999999;
         return orderA - orderB;
@@ -555,7 +563,7 @@ const MyCourses = () => {
                       // Route based on hash_id prefix: el- -> /element/, col- -> /course/
                       if (hashId && hashId.startsWith('el-')) {
                         const exists = await checkElementExists(hashId);
-                        if (exists) navigate(`/element/${hashId}`);
+                        if (exists) navigate(`/element-feed/${hashId}`, { state: { lessons: [item], startIndex: 0, collectionData: null, sourcePage: '/my-courses' } });
                       } else if (hashId && hashId.startsWith('col-')) {
                         navigate(`/course/${routeId}`, { state: { collectionData: item, sourcePage: '/my-courses' } });
                       } else {

@@ -10,6 +10,7 @@
     "@zxing/library": "^0.21.3",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "hls.js": "^1.6.12",
     "html5-qrcode": "^2.3.8",
     "quagga": "^0.12.1",
     "react": "^18.2.0",

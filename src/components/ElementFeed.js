@@ -1,19 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import useScrollSnap from 'react-use-scroll-snap';
 import GlobalLayout from './GlobalLayout';
 import './ElementFeed.css';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext';
 import { getCollectionByHash, getElementByHash } from '../services/apiService';
 import { useLanguage } from '../context/LanguageContext';
 import { useExternalBackButton } from '../hooks/useExternalBackButton';
 
 const ElementFeed = () => {
   const { hashId } = useParams(); // collection hash
-  const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
-  const { getCollectionByHash } = useAuth(); // may not exist; rely on location.state
   
   // Set up external back button handling
   const { handleBackClick } = useExternalBackButton('/dashboard');
@@ -28,7 +26,7 @@ const ElementFeed = () => {
     return Number.isFinite(idx) ? Math.max(0, idx) : 0;
   }, [location]);
 
-  const collectionData = useMemo(() => location?.state?.collectionData || null, [location]);
+  const collectionData = useMemo(() => location?.state?.collectionData || null, [location?.state?.collectionData]);
   const isDebug = useMemo(() => {
     try {
       const sp = new URLSearchParams(location?.search || window.location.search || '');
@@ -59,6 +57,8 @@ const ElementFeed = () => {
   const [endPopupTimer, setEndPopupTimer] = useState(3);
   const [showSkipIndicator, setShowSkipIndicator] = useState(null); // 'forward' or 'backward'
   const [challengeState, setChallengeState] = useState({}); // idx -> { status: 'idle'|'success'|'failure', playing: 'success'|'failure'|null }
+  const [hintHighlights, setHintHighlights] = useState({}); // idx -> 'yes' | 'no' | null
+  const hintTimersRef = useRef({});
   // Helpers to resolve success/incorrect element IDs to media URLs from current lessons
   const resolveElementMediaById = useCallback((elementId) => {
     if (!elementId) return { url: '', thumbnail: '' };
@@ -142,7 +142,7 @@ const ElementFeed = () => {
     // Default fallback to dashboard for safety
     console.log('ElementFeed defaulting to dashboard');
     return '/dashboard';
-  }, [collectionData, hashId, location?.state?.sourcePage, location?.state]);
+  }, [collectionData, hashId, location?.state?.sourcePage]);
 
   // Set viewport height immediately on mount
   useEffect(() => {
@@ -172,29 +172,34 @@ const ElementFeed = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reorder so the tapped element is first and related follow below (swipe down)
+  // Ensure initial position respects startIndex or forceRotate
   useEffect(() => {
-    const id = hashId || '';
-    if (hasRotatedForElementDetailRef.current) return;
     if (!Array.isArray(lessons) || lessons.length === 0) return;
-    if (!id.startsWith('el-')) return; // only when opened from element detail, not whole collection
-
     const idx = Number(location?.state?.startIndex ?? startIndex ?? 0);
-    if (!Number.isFinite(idx) || idx <= 0 || idx >= lessons.length) return;
+    const forceRotate = Boolean(location?.state?.forceRotate);
+    if (!Number.isFinite(idx) || idx < 0 || idx >= lessons.length) return;
 
-    const rotated = lessons.slice(idx).concat(lessons.slice(0, idx));
-    setLessons(rotated);
-    setActiveIndex(0);
-    hasRotatedForElementDetailRef.current = true;
-
-    // Ensure view is at the first item
-    setTimeout(() => {
-      const first = videoRefs.current[0]?.closest('[data-snap-section]');
-      if (first && first.scrollIntoView) {
-        try { first.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (_) {}
-      }
-    }, 0);
-  }, [hashId, lessons, startIndex, location]);
+    if (forceRotate && !hasRotatedForElementDetailRef.current) {
+      const rotated = lessons.slice(idx).concat(lessons.slice(0, idx));
+      setLessons(rotated);
+      setActiveIndex(0);
+      hasRotatedForElementDetailRef.current = true;
+      setTimeout(() => {
+        const node = videoRefs.current[0]?.closest('[data-snap-section]');
+        if (node && node.scrollIntoView) {
+          try { node.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (_) {}
+        }
+      }, 0);
+    } else {
+      setActiveIndex(idx);
+      setTimeout(() => {
+        const node = videoRefs.current[idx]?.closest('[data-snap-section]');
+        if (node && node.scrollIntoView) {
+          try { node.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (_) {}
+        }
+      }, 0);
+    }
+  }, [lessons, startIndex, location?.state?.startIndex]);
 
   // If lessons not provided, fetch by id pattern (el- or col-)
   useEffect(() => {
@@ -225,7 +230,7 @@ const ElementFeed = () => {
         // Leave lessons as is
       }
     })();
-  }, [hashId, lessons, location]);
+  }, [hashId, lessons.length]);
 
   // Track visibility of videos to update activeIndex (do not directly play here)
   useEffect(() => {
@@ -560,7 +565,7 @@ const ElementFeed = () => {
       >
         {lessons.map((lesson, idx) => (
           <section
-            key={lesson.id || lesson.hash_id || idx}
+            key={lesson?.hash_id || (lesson?.id != null ? `${lesson.id}-${idx}` : `idx-${idx}`)}
             data-snap-section
             style={{
               height: isSimFullscreen ? viewportHeight : '100vh',
@@ -692,15 +697,16 @@ const ElementFeed = () => {
                           style={{
                             flex: 1,
                             maxWidth: 240,
-                            background: '#E74A3B',
+                            background: hintHighlights[idx] === 'yes' ? '#EF4444' : '#E74A3B',
                             color: '#fff',
                             border: 0,
                             borderRadius: 12,
                             padding: '10px 12px',
                             fontWeight: 700,
                             fontSize: 14,
-                            boxShadow: '0 6px 12px rgba(231,74,59,0.28)',
-                            border: '1px solid rgba(255,255,255,0.18)'
+                            boxShadow: hintHighlights[idx] === 'yes' ? '0 0 0 3px rgba(239,68,68,0.45), 0 6px 12px rgba(231,74,59,0.28)' : '0 6px 12px rgba(231,74,59,0.28)',
+                            transform: hintHighlights[idx] === 'yes' ? 'scale(1.03)' : 'scale(1)',
+                            transition: 'all 160ms ease-out'
                           }}
                           aria-label="Yes"
                         >
@@ -732,15 +738,16 @@ const ElementFeed = () => {
                           style={{
                             flex: 1,
                             maxWidth: 240,
-                            background: '#36B24A',
+                            background: hintHighlights[idx] === 'no' ? '#22C55E' : '#36B24A',
                             color: '#fff',
                             border: 0,
                             borderRadius: 12,
                             padding: '10px 12px',
                             fontWeight: 700,
                             fontSize: 14,
-                            boxShadow: '0 6px 12px rgba(54,178,74,0.28)',
-                            border: '1px solid rgba(255,255,255,0.18)'
+                            boxShadow: hintHighlights[idx] === 'no' ? '0 0 0 3px rgba(34,197,94,0.45), 0 6px 12px rgba(54,178,74,0.28)' : '0 6px 12px rgba(54,178,74,0.28)',
+                            transform: hintHighlights[idx] === 'no' ? 'scale(1.03)' : 'scale(1)',
+                            transition: 'all 160ms ease-out'
                           }}
                           aria-label="No"
                         >
@@ -799,7 +806,19 @@ const ElementFeed = () => {
                       )}
                       {/* Hint row */}
                       <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{
+                        <div onClick={() => {
+                          const correctRaw = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
+                          const correctIsYes = correctRaw === 'yes' || correctRaw === 'true' || correctRaw === '1';
+                          const newVal = correctIsYes ? 'yes' : 'no';
+                          setHintHighlights((prev) => ({ ...prev, [idx]: newVal }));
+                          if (hintTimersRef.current[idx]) {
+                            try { clearTimeout(hintTimersRef.current[idx]); } catch (_) {}
+                          }
+                          hintTimersRef.current[idx] = setTimeout(() => {
+                            setHintHighlights((prev) => ({ ...prev, [idx]: null }));
+                            hintTimersRef.current[idx] = null;
+                          }, 1600);
+                        }} style={{
                           background: '#FFFFFF',
                           borderRadius: 14,
                           padding: '18px 22px',
@@ -812,7 +831,10 @@ const ElementFeed = () => {
                           gap: 10,
                           color: '#111827',
                           fontWeight: 800,
-                          fontSize: 16
+                          fontSize: 16,
+                          cursor: 'pointer',
+                          transform: hintHighlights[idx] ? 'scale(1.02)' : 'scale(1)',
+                          transition: 'all 160ms ease-out'
                         }}>
                           <span role="img" aria-label="hint">💡</span>
                           {(() => {

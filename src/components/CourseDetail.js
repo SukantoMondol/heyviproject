@@ -43,11 +43,13 @@ const CourseDetail = () => {
         if (optimistic) {
           setCollection(optimistic);
           const optimisticLessons = Array.isArray(optimistic.elements) ? optimistic.elements : [];
-          // Remove duplicates based on hash_id to prevent double lessons
-          const uniqueOptimisticLessons = optimisticLessons.filter((lesson, index, self) => 
-            index === self.findIndex(l => l.hash_id === lesson.hash_id)
-          );
-          setLessons(uniqueOptimisticLessons);
+          // Remove duplicates based on hash_id OR id to prevent double lessons and enforce order
+          const uniqMap = new Map();
+          optimisticLessons.forEach((l) => {
+            const key = l?.hash_id || `id-${l?.id}`;
+            if (!uniqMap.has(key)) uniqMap.set(key, l);
+          });
+          setLessons(Array.from(uniqMap.values()));
         }
 
         // Only fetch from API if resolvedId looks like a hash (string) and not a placeholder
@@ -61,11 +63,13 @@ const CourseDetail = () => {
           const fromRelated = Array.isArray(payload.related) ? payload.related : [];
           // Use elements if available, otherwise use related, but avoid duplicates
           const finalLessons = fromElements.length ? fromElements : fromRelated;
-          // Remove duplicates based on hash_id to prevent double lessons
-          const uniqueLessons = finalLessons.filter((lesson, index, self) => 
-            index === self.findIndex(l => l.hash_id === lesson.hash_id)
-          );
-          setLessons(uniqueLessons);
+          // Remove duplicates based on hash_id OR id to prevent double lessons and enforce order
+          const uniqMap2 = new Map();
+          finalLessons.forEach((l) => {
+            const key = l?.hash_id || `id-${l?.id}`;
+            if (!uniqMap2.has(key)) uniqMap2.set(key, l);
+          });
+          setLessons(Array.from(uniqMap2.values()));
         } else if (!optimistic) {
           // Without a valid id and no optimistic data, show not found state
           setCollection(null);
@@ -126,11 +130,13 @@ const CourseDetail = () => {
     const next = getNextLesson();
     if (next?.hash_id) {
       const nextIndex = lessons.findIndex(l => l.hash_id === next.hash_id);
-      navigate(`/element/${next.hash_id}`, { 
+      navigate(`/element-feed/${next.hash_id}`, { 
         state: { 
-          elementData: next,
           collectionData: collection,
           sourcePage: location?.state?.sourcePage,
+          lessons: lessons,
+          startIndex: nextIndex >= 0 ? nextIndex : 0,
+          forceRotate: true,
           playlistContext: {
             lessons: lessons,
             currentIndex: nextIndex >= 0 ? nextIndex : 0,
@@ -284,11 +290,13 @@ const CourseDetail = () => {
               <div className="lessons-list">
                 {lessons.map((l, idx) => (
                   <button className="lesson-item" key={l.id || idx} onClick={() => {
-                    navigate(`/element/${l.hash_id}`, { 
+                    navigate(`/element-feed/${l.hash_id}`, { 
                       state: { 
-                        elementData: l,
                         collectionData: collection,
                         sourcePage: location?.state?.sourcePage,
+                        lessons: lessons,
+                        startIndex: idx,
+                        forceRotate: true,
                         playlistContext: {
                           lessons: lessons,
                           currentIndex: idx,
