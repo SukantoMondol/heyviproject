@@ -78,18 +78,27 @@ const ElementFeed = () => {
 
   // Fetch response video by hash from API
   const fetchResponseVideo = useCallback(async (hash) => {
-    if (!hash) return { url: '', thumbnail: '' };
+    if (!hash) {
+      console.log('[HEJVI DEBUG] fetchResponseVideo: No hash provided');
+      return { url: '', thumbnail: '' };
+    }
+    
+    console.log('[HEJVI DEBUG] fetchResponseVideo called with hash:', hash);
     
     // Check if already cached
     if (responseVideos[hash]) {
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Using cached result:', responseVideos[hash]);
       return responseVideos[hash];
     }
 
+    console.log('[HEJVI DEBUG] fetchResponseVideo: Fetching from API...');
     // Mark as loading
     setResponseVideos(prev => ({ ...prev, [hash]: { loading: true, url: '', thumbnail: '', error: '' } }));
 
     try {
       const element = await getElementByHash(hash);
+      console.log('[HEJVI DEBUG] fetchResponseVideo: API response:', element);
+      
       const result = {
         url: normalizeMediaUrl(element?.url_element || ''),
         thumbnail: normalizeMediaUrl(element?.url_thumbnail || ''),
@@ -97,9 +106,11 @@ const ElementFeed = () => {
         error: ''
       };
       
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Final result:', result);
       setResponseVideos(prev => ({ ...prev, [hash]: result }));
       return result;
     } catch (error) {
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Error:', error);
       const result = {
         url: '',
         thumbnail: '',
@@ -386,6 +397,34 @@ const ElementFeed = () => {
     vid.currentTime = Math.max(0, Math.min(vid.duration, newTime));
   };
 
+  // Function to play a random video from the lessons
+  const playRandomVideo = useCallback(() => {
+    const total = (lessons || []).length;
+    if (total === 0) return;
+    
+    // Get a random index different from current
+    let randomIdx;
+    do {
+      randomIdx = Math.floor(Math.random() * total);
+    } while (randomIdx === activeIndex && total > 1);
+    
+    console.log('[HEJVI DEBUG] Playing random video at index:', randomIdx);
+    
+    if (randomIdx !== activeIndex) {
+      setActiveIndex(randomIdx);
+      
+      // Try to scroll to the random section
+      setTimeout(() => {
+        const randomSection = videoRefs.current[randomIdx]?.closest('[data-snap-section]');
+        if (randomSection) {
+          try {
+            randomSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } catch (_) {}
+        }
+      }, 100);
+    }
+  }, [activeIndex, lessons]);
+
   const onNextVideo = useCallback(() => {
     const total = (lessons || []).length;
     if (total === 0) return;
@@ -452,8 +491,8 @@ const ElementFeed = () => {
         // Approach 1: Direct scroll to section
         const nextSection = videoRefs.current[targetIdx]?.closest('[data-snap-section]');
         if (nextSection) {
-          try {
-            nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        try {
+          nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             console.log('[HEJVI DEBUG] Successfully scrolled to target section');
             return true;
           } catch (e) {
@@ -598,7 +637,7 @@ const ElementFeed = () => {
       setEndPopupTimer(3);
       // Force immediate navigation
       setTimeout(() => {
-        onNextVideo();
+      onNextVideo();
       }, 50);
     }
   }, [showEndPopup, endPopupTimer, onNextVideo]);
@@ -823,8 +862,19 @@ const ElementFeed = () => {
                       <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                         <button
                           onClick={async () => {
-                            const correct = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
-                            const isCorrect = correct === 'yes' || correct === 'true' || correct === '1';
+                            // Determine if "Yes" is the correct answer based on the actual content
+                            const correctAnswer = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
+                            const isYesCorrect = correctAnswer === 'yes' || correctAnswer === 'true' || correctAnswer === '1';
+                            
+                            console.log('[HEJVI DEBUG] Yes button clicked', {
+                              correctAnswer,
+                              isYesCorrect,
+                              lesson: lesson?.title || lesson?.name,
+                              correctHash: lesson?.response_correct_hash,
+                              incorrectHash: lesson?.response_incorrect_hash,
+                              correctElementId: lesson?.element_correct_id,
+                              incorrectElementId: lesson?.element_incorrect_id
+                            });
                             
                             // Use new hash-based system first, fallback to old system
                             const correctHash = lesson?.response_correct_hash;
@@ -832,31 +882,31 @@ const ElementFeed = () => {
                             const correctElementId = lesson?.element_correct_id ?? lesson?.correct_element_id ?? lesson?.element_correct_hash_id ?? lesson?.correct_element_hash_id;
                             const incorrectElementId = lesson?.element_incorrect_id ?? lesson?.incorrect_element_id ?? lesson?.element_incorrect_hash_id ?? lesson?.incorrect_element_hash_id;
                             
-                            if (isCorrect) {
+                            if (isYesCorrect) {
+                              // User clicked "Yes" and it's correct
                               if (correctHash) {
-                                // Use new hash-based system
+                                console.log('[HEJVI DEBUG] Yes is correct - Using correct hash:', correctHash);
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetHash: correctHash } }));
-                                // Fetch the video immediately
                                 fetchResponseVideo(correctHash);
                               } else if (correctElementId) {
-                                // Fallback to old system
+                                console.log('[HEJVI DEBUG] Yes is correct - Using correct element ID:', correctElementId);
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                               } else {
-                                // No correct element video; continue to next item immediately
+                                console.log('[HEJVI DEBUG] Yes is correct - No video, continuing to next');
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: null } }));
                                 if (activeIndex === idx) onNextVideo();
                               }
                             } else {
+                              // User clicked "Yes" but it's wrong
                               if (incorrectHash) {
-                                // Use new hash-based system
+                                console.log('[HEJVI DEBUG] Yes is wrong - Using incorrect hash:', incorrectHash);
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: incorrectHash } }));
-                                // Fetch the video immediately
                                 fetchResponseVideo(incorrectHash);
                               } else if (incorrectElementId) {
-                                // Fallback to old system
+                                console.log('[HEJVI DEBUG] Yes is wrong - Using incorrect element ID:', incorrectElementId);
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                               } else {
-                                // No incorrect element video; show inline retry options
+                                console.log('[HEJVI DEBUG] Yes is wrong - No video, showing retry options');
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
                               }
                             }
@@ -881,8 +931,19 @@ const ElementFeed = () => {
                         </button>
                         <button
                           onClick={async () => {
-                            const correct = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
-                            const isCorrect = correct === 'no' || correct === 'false' || correct === '0';
+                            // Determine if "No" is the correct answer based on the actual content
+                            const correctAnswer = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
+                            const isNoCorrect = correctAnswer === 'no' || correctAnswer === 'false' || correctAnswer === '0';
+                            
+                            console.log('[HEJVI DEBUG] No button clicked', {
+                              correctAnswer,
+                              isNoCorrect,
+                              lesson: lesson?.title || lesson?.name,
+                              correctHash: lesson?.response_correct_hash,
+                              incorrectHash: lesson?.response_incorrect_hash,
+                              correctElementId: lesson?.element_correct_id,
+                              incorrectElementId: lesson?.element_incorrect_id
+                            });
                             
                             // Use new hash-based system first, fallback to old system
                             const correctHash = lesson?.response_correct_hash;
@@ -890,29 +951,31 @@ const ElementFeed = () => {
                             const correctElementId = lesson?.element_correct_id ?? lesson?.correct_element_id ?? lesson?.element_correct_hash_id ?? lesson?.correct_element_hash_id;
                             const incorrectElementId = lesson?.element_incorrect_id ?? lesson?.incorrect_element_id ?? lesson?.element_incorrect_hash_id ?? lesson?.incorrect_element_hash_id;
                             
-                            if (isCorrect) {
+                            if (isNoCorrect) {
+                              // User clicked "No" and it's correct
                               if (correctHash) {
-                                // Use new hash-based system
+                                console.log('[HEJVI DEBUG] No is correct - Using correct hash:', correctHash);
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetHash: correctHash } }));
-                                // Fetch the video immediately
                                 fetchResponseVideo(correctHash);
                               } else if (correctElementId) {
-                                // Fallback to old system
+                                console.log('[HEJVI DEBUG] No is correct - Using correct element ID:', correctElementId);
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                               } else {
+                                console.log('[HEJVI DEBUG] No is correct - No video, continuing to next');
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: null } }));
                                 if (activeIndex === idx) onNextVideo();
                               }
                             } else {
+                              // User clicked "No" but it's wrong
                               if (incorrectHash) {
-                                // Use new hash-based system
+                                console.log('[HEJVI DEBUG] No is wrong - Using incorrect hash:', incorrectHash);
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: incorrectHash } }));
-                                // Fetch the video immediately
                                 fetchResponseVideo(incorrectHash);
                               } else if (incorrectElementId) {
-                                // Fallback to old system
+                                console.log('[HEJVI DEBUG] No is wrong - Using incorrect element ID:', incorrectElementId);
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                               } else {
+                                console.log('[HEJVI DEBUG] No is wrong - No video, showing retry options');
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
                               }
                             }
@@ -948,6 +1011,13 @@ const ElementFeed = () => {
                                 const expected = String(lesson?.fulltext || lesson?.correct_option || '').trim().toLowerCase();
                                 const isCorrect = expected && val === expected;
                                 
+                                console.log('[HEJVI DEBUG] Text input submitted', {
+                                  userInput: val,
+                                  expected,
+                                  isCorrect,
+                                  lesson: lesson?.title || lesson?.name
+                                });
+                                
                                 // Use new hash-based system first, fallback to old system
                                 const correctHash = lesson?.response_correct_hash;
                                 const incorrectHash = lesson?.response_incorrect_hash;
@@ -956,26 +1026,25 @@ const ElementFeed = () => {
                                 
                                 if (isCorrect) {
                                   if (correctHash) {
-                                    // Use new hash-based system
+                                    console.log('[HEJVI DEBUG] Text answer correct - Using correct hash:', correctHash);
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetHash: correctHash } }));
-                                    // Fetch the video immediately
                                     fetchResponseVideo(correctHash);
                                   } else if (correctElementId) {
-                                    // Fallback to old system
+                                    console.log('[HEJVI DEBUG] Text answer correct - Using correct element ID:', correctElementId);
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                                   } else if (activeIndex === idx) {
                                     onNextVideo();
                                   }
                                 } else {
                                   if (incorrectHash) {
-                                    // Use new hash-based system
+                                    console.log('[HEJVI DEBUG] Text answer wrong - Using incorrect hash:', incorrectHash);
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: incorrectHash } }));
-                                    // Fetch the video immediately
                                     fetchResponseVideo(incorrectHash);
                                   } else if (incorrectElementId) {
-                                    // Fallback to old system
+                                    console.log('[HEJVI DEBUG] Text answer wrong - Using incorrect element ID:', incorrectElementId);
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                                   } else {
+                                    console.log('[HEJVI DEBUG] Text answer wrong - No video, showing retry options');
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
                                   }
                                 }
@@ -990,6 +1059,13 @@ const ElementFeed = () => {
                               const expected = String(lesson?.fulltext || lesson?.correct_option || '').trim().toLowerCase();
                               const isCorrect = expected && val === expected;
                               
+                              console.log('[HEJVI DEBUG] Submit button clicked', {
+                                userInput: val,
+                                expected,
+                                isCorrect,
+                                lesson: lesson?.title || lesson?.name
+                              });
+                              
                               // Use new hash-based system first, fallback to old system
                               const correctHash = lesson?.response_correct_hash;
                               const incorrectHash = lesson?.response_incorrect_hash;
@@ -998,26 +1074,25 @@ const ElementFeed = () => {
                               
                               if (isCorrect) {
                                 if (correctHash) {
-                                  // Use new hash-based system
+                                  console.log('[HEJVI DEBUG] Submit answer correct - Using correct hash:', correctHash);
                                   setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetHash: correctHash } }));
-                                  // Fetch the video immediately
                                   fetchResponseVideo(correctHash);
                                 } else if (correctElementId) {
-                                  // Fallback to old system
+                                  console.log('[HEJVI DEBUG] Submit answer correct - Using correct element ID:', correctElementId);
                                   setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                                 } else if (activeIndex === idx) {
                                   onNextVideo();
                                 }
                               } else {
                                 if (incorrectHash) {
-                                  // Use new hash-based system
+                                  console.log('[HEJVI DEBUG] Submit answer wrong - Using incorrect hash:', incorrectHash);
                                   setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: incorrectHash } }));
-                                  // Fetch the video immediately
                                   fetchResponseVideo(incorrectHash);
                                 } else if (incorrectElementId) {
-                                  // Fallback to old system
+                                  console.log('[HEJVI DEBUG] Submit answer wrong - Using incorrect element ID:', incorrectElementId);
                                   setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                                 } else {
+                                  console.log('[HEJVI DEBUG] Submit answer wrong - No video, showing retry options');
                                   setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
                                 }
                               }
@@ -1083,9 +1158,10 @@ const ElementFeed = () => {
                           </button>
                           <button
                             onClick={() => {
-                              // Continue to next video
+                              // Continue to random video (not next in sequence)
+                              console.log('[HEJVI DEBUG] Continue button clicked - playing random video');
                               setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null, targetElementId: null, targetHash: null } }));
-                              if (activeIndex === idx) onNextVideo();
+                              if (activeIndex === idx) playRandomVideo();
                             }}
                             style={{ background: '#111827', color: '#fff', border: 0, borderRadius: 10, padding: '12px 16px', fontWeight: 700 }}
                           >
@@ -1102,6 +1178,14 @@ const ElementFeed = () => {
                     const targetElementId = challengeState[idx]?.targetElementId;
                     const targetHash = challengeState[idx]?.targetHash;
                     
+                    console.log('[HEJVI DEBUG] Overlay check', {
+                      idx,
+                      playing,
+                      targetElementId,
+                      targetHash,
+                      responseVideos: responseVideos[targetHash]
+                    });
+                    
                     // Find the target element video URL - prioritize hash-based system
                     let overlayUrl = '';
                     if (playing && targetHash) {
@@ -1109,14 +1193,22 @@ const ElementFeed = () => {
                       const responseVideo = responseVideos[targetHash];
                       if (responseVideo && !responseVideo.loading && responseVideo.url) {
                         overlayUrl = responseVideo.url;
+                        console.log('[HEJVI DEBUG] Using hash-based video URL:', overlayUrl);
+                      } else {
+                        console.log('[HEJVI DEBUG] Hash-based video not ready:', responseVideo);
                       }
                     } else if (playing && targetElementId) {
                       // Fallback to old element ID system
                       const targetElement = lessons.find(l => Number(l.id) === Number(targetElementId) || l.hash_id === targetElementId);
                       if (targetElement) {
                         overlayUrl = normalizeMediaUrl(targetElement.url_element);
+                        console.log('[HEJVI DEBUG] Using element ID-based video URL:', overlayUrl);
+                      } else {
+                        console.log('[HEJVI DEBUG] Element not found for ID:', targetElementId);
                       }
                     }
+                    
+                    console.log('[HEJVI DEBUG] Final overlay URL:', overlayUrl);
                     
                     return playing && overlayUrl ? (
                     <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999 }} onMouseDown={(e)=>e.stopPropagation()} onTouchStart={(e)=>e.stopPropagation()}>
@@ -1174,9 +1266,10 @@ const ElementFeed = () => {
                           </button>
                           <button
                             onClick={() => {
-                              // Continue to next video
+                              // Continue to random video (not next in sequence)
+                              console.log('[HEJVI DEBUG] Continue button clicked - playing random video');
                               setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null, targetElementId: null, targetHash: null } }));
-                              if (activeIndex === idx) onNextVideo();
+                              if (activeIndex === idx) playRandomVideo();
                             }}
                             style={{ background: '#111827', color: '#fff', border: 0, borderRadius: 10, padding: '12px 16px', fontWeight: 700 }}
                           >
