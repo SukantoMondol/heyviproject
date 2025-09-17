@@ -166,7 +166,7 @@ const CourseDetail = () => {
         const next = getNextLesson();
         if (next?.hash_id) {
           const nextIndex = lessons.findIndex(l => l.hash_id === next.hash_id);
-          navigate(`/element-feed/${next.hash_id}`, { 
+          navigate(`/element/${next.hash_id}`, { 
             state: { 
               elementData: next,
               collectionData: collection,
@@ -291,7 +291,7 @@ const CourseDetail = () => {
               <div className="lessons-list">
                 {lessons.map((l, idx) => (
                   <button className="lesson-item" key={l.id || idx} onClick={() => {
-                    navigate(`/element-feed/${l.hash_id}`, { 
+                    navigate(`/element/${l.hash_id}`, { 
                       state: { 
                         collectionData: collection,
                         sourcePage: location?.state?.sourcePage,
