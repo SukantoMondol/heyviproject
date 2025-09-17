@@ -19,6 +19,7 @@ const translations = {
     search: 'Search',
     filter: 'Filter',
     all: 'All',
+    needHint: 'Need a hint?',
     
     // Navigation
     home: 'Home',
@@ -445,6 +446,7 @@ const translations = {
     search: 'Suchen',
     filter: 'Filter',
     all: 'Alle',
+    needHint: 'Brauchen Sie einen Hinweis?',
     
     // Navigation
     home: 'Startseite',
@@ -1040,6 +1042,7 @@ const translations = {
     search: 'Rechercher',
     filter: 'Filtrer',
     all: 'Tous',
+    needHint: 'Besoin d’un indice ?',
     
     // Navigation
     home: 'Accueil',
@@ -1449,6 +1452,7 @@ const translations = {
     search: 'Поиск',
     filter: 'Фильтр',
     all: 'Все',
+    needHint: 'Нужна подсказка?',
     
     // Navigation
     home: 'Главная',
@@ -1858,6 +1862,7 @@ const translations = {
     search: 'بحث',
     filter: 'تصفية',
     all: 'الكل',
+    needHint: 'هل تحتاج إلى تلميح؟',
     
     // Navigation
     home: 'الرئيسية',

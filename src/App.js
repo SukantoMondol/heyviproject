@@ -18,6 +18,26 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import './App.css';
 
+// Compute router basename consistently for dev/prod
+function getBasename() {
+  // Prefer config baseUrl when provided
+  try {
+    const url = new URL(appConfig.baseUrl);
+    const fromConfig = url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname;
+    if (fromConfig && fromConfig !== '/') return fromConfig;
+  } catch (_) {}
+
+  // In development, allow hosting under a sub-path like /hejvi
+  try {
+    const path = window.location?.pathname || '';
+    const common = ['/hejvi'];
+    const detected = common.find(p => p && p !== '/' && path.startsWith(p));
+    if (detected) return detected;
+  } catch (_) {}
+
+  return '';
+}
+
 // Protected Route component with redirect support
 function ProtectedRoute({ children, redirectTo = null }) {
   const { user, loading } = useAuth();
@@ -37,14 +57,13 @@ function ProtectedRoute({ children, redirectTo = null }) {
   if (!user) {
     // Store the intended destination for redirect after login
     // Remove the basename from the path to avoid duplication
-    const basename = process.env.NODE_ENV === 'production' ? '/hejvi' : '';
+    const basename = getBasename();
     let currentPath = location.pathname + location.search;
-    
-    // Remove basename if it exists at the start of the path
+
     if (basename && currentPath.startsWith(basename)) {
-      currentPath = currentPath.substring(basename.length);
+      currentPath = currentPath.substring(basename.length) || '/';
     }
-    
+
     if (currentPath !== '/login') {
       localStorage.setItem('hejvi_redirect_after_login', currentPath);
     }
@@ -71,10 +90,20 @@ function PublicRoute({ children }) {
 
   if (user) {
     // Check if there's a redirect destination stored
-    const redirectPath = localStorage.getItem('hejvi_redirect_after_login');
+    let redirectPath = localStorage.getItem('hejvi_redirect_after_login');
     if (redirectPath) {
+      const basename = getBasename();
+      if (basename && redirectPath.startsWith(basename)) {
+        redirectPath = redirectPath.substring(basename.length) || '/';
+      }
       localStorage.removeItem('hejvi_redirect_after_login');
-      return <Navigate to={redirectPath} replace />;
+      // Guard against invalid routes causing 404; fall back to '/'
+      try {
+        new URL(redirectPath, window.location.origin); // just a sanity check
+        return <Navigate to={redirectPath} replace />;
+      } catch (_) {
+        return <Navigate to="/" replace />;
+      }
     }
     return <Navigate to="/" replace />;
   }
@@ -247,17 +276,7 @@ function App() {
     <LanguageProvider>
       <AuthProvider>
         <Router
-          basename={(function() {
-            // Derive basename from config.baseUrl when in production; else ''
-            if (process.env.NODE_ENV !== 'production') return '';
-            try {
-              const url = new URL(appConfig.baseUrl);
-              return url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname;
-            } catch (_) {
-              // Fallback to original '/hejvi' if baseUrl is malformed
-              return '/hejvi';
-            }
-          })()}
+          basename={getBasename()}
           future={{
             v7_startTransition: true,
             v7_relativeSplatPath: true
@@ -272,4 +291,3 @@ function App() {
 }
 
 export default App;
-

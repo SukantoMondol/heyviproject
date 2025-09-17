@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getContentByHash } from '../services/apiService';
 import GlobalLayout from './GlobalLayout';
 import './Dashboard.css';
 
@@ -71,6 +72,37 @@ const Favourites = () => {
     load();
   }, [getFavourites]);
 
+  // Resolve unknown hash ids and navigate to the right screen
+  const openFavourite = async (id) => {
+    try {
+      const hashId = String(id || '').trim();
+      if (!hashId) return;
+
+      // Route by prefix when possible
+      if (hashId.startsWith('el-')) {
+        navigate(`/element/${hashId}`, { state: { sourcePage: '/favourites' } });
+        return;
+      }
+      if (hashId.startsWith('col-')) {
+        navigate(`/course/${hashId}`, { state: { sourcePage: '/favourites' } });
+        return;
+      }
+
+      // Fallback: ask backend what this id is
+      const content = await getContentByHash(hashId);
+      if (content?.type === 'element') {
+        navigate(`/element/${hashId}`, { state: { sourcePage: '/favourites', elementData: content.data?.data } });
+      } else if (content?.type === 'collection') {
+        navigate(`/course/${hashId}`, { state: { sourcePage: '/favourites', collectionData: content.data?.data } });
+      } else {
+        setError('Failed to load element');
+      }
+    } catch (e) {
+      console.error('Open favourite failed:', e);
+      setError('Failed to load element');
+    }
+  };
+
   return (
     <GlobalLayout title="Favorites">
       {loading && (
@@ -99,7 +131,7 @@ const Favourites = () => {
               className="favorite-card"
               onClick={() => {
                 const id = item.hash_id || item.id;
-                if (id) navigate(`/element/${id}`);
+                if (id) openFavourite(id);
               }}
             >
               <div className="favorite-card-content">

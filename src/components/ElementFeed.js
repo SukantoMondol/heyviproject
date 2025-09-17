@@ -62,7 +62,13 @@ const ElementFeed = () => {
   // Helpers to resolve success/incorrect element IDs to media URLs from current lessons
   const resolveElementMediaById = useCallback((elementId) => {
     if (!elementId) return { url: '', thumbnail: '' };
-    const element = (lessons || []).find((el) => Number(el?.id) === Number(elementId));
+    const idStr = String(elementId);
+    const element = (lessons || []).find((el) => {
+      if (idStr.startsWith('el-')) {
+        return String(el?.hash_id || el?.hashId) === idStr;
+      }
+      return Number(el?.id) === Number(elementId);
+    });
     return {
       url: normalizeMediaUrl(element?.url_element || ''),
       thumbnail: normalizeMediaUrl(element?.url_thumbnail || '')
@@ -182,13 +188,13 @@ const ElementFeed = () => {
     // Don't rotate the lessons array - just set the correct active index
     // This ensures the correct video plays when clicking on a specific lesson
     setActiveIndex(idx);
-    hasRotatedForElementDetailRef.current = true;
-    setTimeout(() => {
-      const node = videoRefs.current[idx]?.closest('[data-snap-section]');
-      if (node && node.scrollIntoView) {
-        try { node.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (_) {}
-      }
-    }, 0);
+      hasRotatedForElementDetailRef.current = true;
+      setTimeout(() => {
+        const node = videoRefs.current[idx]?.closest('[data-snap-section]');
+        if (node && node.scrollIntoView) {
+          try { node.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (_) {}
+        }
+      }, 0);
   }, [lessons, startIndex, location?.state?.startIndex]);
 
   // If lessons not provided, fetch by id pattern (el- or col-)
@@ -430,12 +436,17 @@ const ElementFeed = () => {
 
   // Timer effect for end popup
   useEffect(() => {
-    if (showEndPopup && endPopupTimer > 0) {
+    if (!showEndPopup) return;
+    if (endPopupTimer > 0) {
       const timer = setTimeout(() => {
-        setEndPopupTimer(prev => prev - 1);
+        setEndPopupTimer(prev => Math.max(0, prev - 1));
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (showEndPopup && endPopupTimer === 0) {
+    }
+    // When countdown hits zero, immediately advance and reset UI state
+    if (endPopupTimer === 0) {
+      setShowEndPopup(false);
+      setEndPopupTimer(3);
       onNextVideo();
     }
   }, [showEndPopup, endPopupTimer, onNextVideo]);
@@ -662,10 +673,10 @@ const ElementFeed = () => {
                           onClick={async () => {
                             const correct = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
                             const isCorrect = correct === 'yes' || correct === 'true' || correct === '1';
-                            
+                            // Support multiple API field names for element ids
+                            const correctElementId = lesson?.element_correct_id ?? lesson?.correct_element_id ?? lesson?.element_correct_hash_id ?? lesson?.correct_element_hash_id;
+                            const incorrectElementId = lesson?.element_incorrect_id ?? lesson?.incorrect_element_id ?? lesson?.element_incorrect_hash_id ?? lesson?.incorrect_element_hash_id;
                             if (isCorrect) {
-                              // Correct answer: play the element_correct_id video
-                              const correctElementId = lesson?.element_correct_id;
                               if (correctElementId) {
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                               } else {
@@ -674,8 +685,6 @@ const ElementFeed = () => {
                                 if (activeIndex === idx) onNextVideo();
                               }
                             } else {
-                              // Wrong answer: play the element_incorrect_id video
-                              const incorrectElementId = lesson?.element_incorrect_id;
                               if (incorrectElementId) {
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                               } else {
@@ -706,10 +715,9 @@ const ElementFeed = () => {
                           onClick={async () => {
                             const correct = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
                             const isCorrect = correct === 'no' || correct === 'false' || correct === '0';
-                            
+                            const correctElementId = lesson?.element_correct_id ?? lesson?.correct_element_id ?? lesson?.element_correct_hash_id ?? lesson?.correct_element_hash_id;
+                            const incorrectElementId = lesson?.element_incorrect_id ?? lesson?.incorrect_element_id ?? lesson?.element_incorrect_hash_id ?? lesson?.incorrect_element_hash_id;
                             if (isCorrect) {
-                              // Correct answer: play the element_correct_id video
-                              const correctElementId = lesson?.element_correct_id;
                               if (correctElementId) {
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                               } else {
@@ -717,8 +725,6 @@ const ElementFeed = () => {
                                 if (activeIndex === idx) onNextVideo();
                               }
                             } else {
-                              // Wrong answer: play the element_incorrect_id video
-                              const incorrectElementId = lesson?.element_incorrect_id;
                               if (incorrectElementId) {
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                               } else {
@@ -756,18 +762,15 @@ const ElementFeed = () => {
                                 const val = String(e.currentTarget.value || '').trim().toLowerCase();
                                 const expected = String(lesson?.fulltext || lesson?.correct_option || '').trim().toLowerCase();
                                 const isCorrect = expected && val === expected;
-                                
+                                const correctElementId = lesson?.element_correct_id ?? lesson?.correct_element_id ?? lesson?.element_correct_hash_id ?? lesson?.correct_element_hash_id;
+                                const incorrectElementId = lesson?.element_incorrect_id ?? lesson?.incorrect_element_id ?? lesson?.element_incorrect_hash_id ?? lesson?.incorrect_element_hash_id;
                                 if (isCorrect) {
-                                  // Correct answer: play the element_correct_id video
-                                  const correctElementId = lesson?.element_correct_id;
                                   if (correctElementId) {
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                                   } else if (activeIndex === idx) {
                                     onNextVideo();
                                   }
                                 } else {
-                                  // Wrong answer: play the element_incorrect_id video
-                                  const incorrectElementId = lesson?.element_incorrect_id;
                                   if (incorrectElementId) {
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                                   } else {
@@ -784,18 +787,15 @@ const ElementFeed = () => {
                               const val = String(input.value || '').trim().toLowerCase();
                               const expected = String(lesson?.fulltext || lesson?.correct_option || '').trim().toLowerCase();
                               const isCorrect = expected && val === expected;
-                              
+                              const correctElementId = lesson?.element_correct_id ?? lesson?.correct_element_id ?? lesson?.element_correct_hash_id ?? lesson?.correct_element_hash_id;
+                              const incorrectElementId = lesson?.element_incorrect_id ?? lesson?.incorrect_element_id ?? lesson?.element_incorrect_hash_id ?? lesson?.incorrect_element_hash_id;
                               if (isCorrect) {
-                                // Correct answer: play the element_correct_id video
-                                const correctElementId = lesson?.element_correct_id;
                                 if (correctElementId) {
                                   setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                                 } else if (activeIndex === idx) {
                                   onNextVideo();
                                 }
                               } else {
-                                // Wrong answer: play the element_incorrect_id video
-                                const incorrectElementId = lesson?.element_incorrect_id;
                                 if (incorrectElementId) {
                                   setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                                 } else {
@@ -1230,7 +1230,12 @@ const ElementFeed = () => {
                         </button>
                         <button
                           className="ef-end-btn ef-end-next-btn"
-                          onClick={onNextVideo}
+                          onClick={() => {
+                            // Dismiss popup and go to next immediately on user action
+                            setShowEndPopup(false);
+                            setEndPopupTimer(3);
+                            onNextVideo();
+                          }}
                           aria-label={t('next')}
                         >
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">

@@ -11,7 +11,7 @@ import './MyCourses.css';
 const MyCourses = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, getMyCourses, searchByTerm, toggleFavourites, setProgress, getElement } = useAuth();
+  const { user, logout, getMyCourses, getFavourites, searchByTerm, toggleFavourites, setProgress, getElement } = useAuth();
   const [coursesData, setCoursesData] = useState([]);
   const [allCoursesData, setAllCoursesData] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
@@ -129,7 +129,34 @@ const MyCourses = () => {
   const fetchCoursesData = async () => {
     try {
       setLoading(true);
-      const data = await getMyCourses();
+      const [data, favResponse] = await Promise.all([
+        getMyCourses(),
+        // Fetch current favourites to ensure correct favourite_value highlighting
+        (async () => {
+          try { return await getFavourites(); } catch (_) { return null; }
+        })()
+      ]);
+
+      // Build a set of favourite hash_ids from favourites endpoint
+      const favouriteSet = (() => {
+        const set = new Set();
+        const favPayload = favResponse;
+        if (!favPayload) return set;
+        // API shapes supported: {status:'success', data:[...]}, {status:'success', data:{elements,collections}}, direct array, {items:[...]}
+        const collect = (arr) => (Array.isArray(arr) ? arr : []).forEach((it) => it?.hash_id && set.add(it.hash_id));
+        if (favPayload?.status === 'success') {
+          if (Array.isArray(favPayload?.data)) collect(favPayload.data);
+          if (favPayload?.data) {
+            collect(favPayload.data.elements);
+            collect(favPayload.data.collections);
+          }
+        } else if (Array.isArray(favPayload)) {
+          collect(favPayload);
+        } else if (Array.isArray(favPayload?.items)) {
+          collect(favPayload.items);
+        }
+        return set;
+      })();
       
       // Collect ALL possible items from API (courses, collections, favourites, raw arrays)
       let coursesList = [];
@@ -163,7 +190,8 @@ const MyCourses = () => {
         progress: course.progress || 0,
         mandatory: course.is_mandatory || false,
         is_mandatory: course.is_mandatory || false,
-        favourite_value: course.favourite_value ?? 0,
+        // Trust favourites endpoint over course payload to highlight correctly
+        favourite_value: favouriteSet.has(course.hash_id) ? 1 : (course.favourite_value ?? 0),
         type: course.type,
         order: course.order || 999999, // Preserve order field for sorting
         // Use only real tags
@@ -195,7 +223,8 @@ const MyCourses = () => {
         const hid = String(c?.hash_id || '');
         const typeNum = Number(c?.type);
         if (hid.startsWith('el-')) return false;
-        return hid.startsWith('col-') || typeNum === 2;
+        // Collections are type 1 (to match Dashboard). Keep hash prefix or type check consistent.
+        return hid.startsWith('col-') || typeNum === 1;
       });
 
       // Sort courses by order field to maintain proper sequence
