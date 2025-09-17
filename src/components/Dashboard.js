@@ -144,9 +144,8 @@ const Dashboard = () => {
 
   const fetchFeedData = async (forceRefresh = false) => {
     try {
-      if (isFetchingRef.current) return; // prevent concurrent fetches
       isFetchingRef.current = true;
-      if (page === 1) setLoading(true); // only show full-page loader on first page
+      setLoading(true);
       
       const raw = await getFeed({
         page,
@@ -192,7 +191,7 @@ const Dashboard = () => {
         setAllFeedData([]);
       }
     } finally {
-      if (page === 1) setLoading(false);
+      setLoading(false);
       isFetchingRef.current = false;
     }
   };
@@ -641,15 +640,6 @@ const Dashboard = () => {
   // Ensure feedData is always an array before filtering
   const filteredFeedData = Array.isArray(feedData) ? feedData : [];
 
-  // Auto-refetch when returning to dashboard and list is empty
-  useEffect(() => {
-    if (location?.pathname === '/dashboard' && !loading && !isSearchActive && (!Array.isArray(feedData) || feedData.length === 0)) {
-      setPage(1);
-      isFetchingRef.current = false;
-      fetchFeedData(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location?.pathname]);
 
 
   if (loading && page === 1) {
@@ -728,16 +718,8 @@ const Dashboard = () => {
         {/* Feed Content */}
         <div className="feed-container" ref={feedContainerRef}>
           {filteredFeedData.length === 0 ? (
-            <div className={`feed-grid ${isTwoColumnLayout ? 'feed-grid-two-column' : 'feed-grid-single-column'}`}>
-              {Array.from({ length: 4 }).map((_, idx) => (
-                <div key={`empty-skeleton-${idx}`} className="feed-card skeleton">
-                  <div className="feed-media skeleton-block"></div>
-                  <div className="feed-footer">
-                    <div className="skeleton-line title"></div>
-                    <div className="skeleton-line small"></div>
-                  </div>
-                </div>
-              ))}
+            <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+              <p>No feed data available</p>
             </div>
           ) : (
             <>
@@ -791,7 +773,7 @@ const Dashboard = () => {
                         
                         // Route based on hash_id prefix: el- -> /element/, col- -> /course/
                         if (hashId && hashId.startsWith('el-')) {
-                          navigate(`/element-feed/${hashId}`, { state: { lessons: [item], startIndex: 0, collectionData: null, sourcePage: '/dashboard' } });
+                          navigate(`/element/${hashId}`);
                         } else if (hashId && hashId.startsWith('col-')) {
                           navigate(`/course/${hashId}`, { state: { collectionData: item, sourcePage: '/dashboard' } });
                         } else {
@@ -799,7 +781,7 @@ const Dashboard = () => {
                           if (isCollection) {
                             navigate(`/course/${routeId}`, { state: { collectionData: item, sourcePage: '/dashboard' } });
                           } else {
-                            navigate(`/element-feed/${hashId}`, { state: { lessons: [item], startIndex: 0, collectionData: null, sourcePage: '/dashboard' } });
+                            navigate(`/element/${hashId}`);
                           }
                         }
                       }}
@@ -825,7 +807,7 @@ const Dashboard = () => {
                             if (!hashId && !isCollection) return;
                             // Route based on hash_id prefix: el- -> /element/, col- -> /course/
                             if (hashId && hashId.startsWith('el-')) {
-                              navigate(`/element-feed/${hashId}`, { state: { lessons: [item], startIndex: 0, collectionData: null, sourcePage: '/dashboard' } });
+                              navigate(`/element/${hashId}`);
                             } else if (hashId && hashId.startsWith('col-')) {
                               navigate(`/course/${routeId}`, { state: { collectionData: item, sourcePage: '/dashboard' } });
                             } else {
@@ -833,7 +815,7 @@ const Dashboard = () => {
                               if (isCollection) {
                                 navigate(`/course/${routeId}`, { state: { collectionData: item, sourcePage: '/dashboard' } });
                               } else {
-                                navigate(`/element-feed/${hashId}`, { state: { lessons: [item], startIndex: 0, collectionData: null, sourcePage: '/dashboard' } });
+                                navigate(`/element/${hashId}`);
                               }
                             }
                           }}
@@ -886,7 +868,7 @@ const Dashboard = () => {
             </div>
             {/* Infinite scroll trigger */}
             {!isSearchActive && hasMore && (
-              <div ref={loadMoreRef} style={{ padding: '20px 0', textAlign: 'center' }}>
+              <div ref={loadMoreRef} style={{ padding: '20px', textAlign: 'center' }}>
                 {loading && page > 1 ? (
                   <div className={`feed-grid ${isTwoColumnLayout ? 'feed-grid-two-column' : 'feed-grid-single-column'}`}>
                     {Array.from({ length: 4 }).map((_, idx) => (
@@ -900,7 +882,9 @@ const Dashboard = () => {
                     ))}
                   </div>
                 ) : (
-                  <div style={{ height: '1px' }} />
+                  <div style={{ color: '#6B7280', fontSize: '14px' }}>
+                    Scroll down to load more
+                  </div>
                 )}
               </div>
             )}

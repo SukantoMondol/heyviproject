@@ -179,26 +179,16 @@ const ElementFeed = () => {
     const forceRotate = Boolean(location?.state?.forceRotate);
     if (!Number.isFinite(idx) || idx < 0 || idx >= lessons.length) return;
 
-    if (forceRotate && !hasRotatedForElementDetailRef.current) {
-      const rotated = lessons.slice(idx).concat(lessons.slice(0, idx));
-      setLessons(rotated);
-      setActiveIndex(0);
-      hasRotatedForElementDetailRef.current = true;
-      setTimeout(() => {
-        const node = videoRefs.current[0]?.closest('[data-snap-section]');
-        if (node && node.scrollIntoView) {
-          try { node.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (_) {}
-        }
-      }, 0);
-    } else {
-      setActiveIndex(idx);
-      setTimeout(() => {
-        const node = videoRefs.current[idx]?.closest('[data-snap-section]');
-        if (node && node.scrollIntoView) {
-          try { node.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (_) {}
-        }
-      }, 0);
-    }
+    // Don't rotate the lessons array - just set the correct active index
+    // This ensures the correct video plays when clicking on a specific lesson
+    setActiveIndex(idx);
+    hasRotatedForElementDetailRef.current = true;
+    setTimeout(() => {
+      const node = videoRefs.current[idx]?.closest('[data-snap-section]');
+      if (node && node.scrollIntoView) {
+        try { node.scrollIntoView({ behavior: 'instant', block: 'start' }); } catch (_) {}
+      }
+    }, 0);
   }, [lessons, startIndex, location?.state?.startIndex]);
 
   // If lessons not provided, fetch by id pattern (el- or col-)
@@ -672,24 +662,24 @@ const ElementFeed = () => {
                           onClick={async () => {
                             const correct = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
                             const isCorrect = correct === 'yes' || correct === 'true' || correct === '1';
-                            // Prefer element id targets; fallback to direct URLs if provided
-                            const { url: successElUrl } = resolveElementMediaById(lesson?.element_correct_id);
-                            const { url: failureElUrl } = resolveElementMediaById(lesson?.element_incorrect_id);
-                            const successUrl = successElUrl || normalizeMediaUrl(lesson?.url_success || lesson?.success_url);
-                            const failureUrl = failureElUrl || normalizeMediaUrl(lesson?.url_failure || lesson?.failure_url);
+                            
                             if (isCorrect) {
-                              if (successUrl) {
-                                setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success' } }));
+                              // Correct answer: play the element_correct_id video
+                              const correctElementId = lesson?.element_correct_id;
+                              if (correctElementId) {
+                                setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                               } else {
-                                // No success video provided; continue to next item immediately
+                                // No correct element video; continue to next item immediately
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: null } }));
                                 if (activeIndex === idx) onNextVideo();
                               }
                             } else {
-                              if (failureUrl) {
-                                setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure' } }));
+                              // Wrong answer: play the element_incorrect_id video
+                              const incorrectElementId = lesson?.element_incorrect_id;
+                              if (incorrectElementId) {
+                                setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                               } else {
-                                // No failure video; show inline retry options
+                                // No incorrect element video; show inline retry options
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
                               }
                             }
@@ -716,20 +706,21 @@ const ElementFeed = () => {
                           onClick={async () => {
                             const correct = String(lesson?.correct_option ?? lesson?.correct_answer ?? lesson?.correct ?? '1').toLowerCase();
                             const isCorrect = correct === 'no' || correct === 'false' || correct === '0';
-                            const { url: successElUrl } = resolveElementMediaById(lesson?.element_correct_id);
-                            const { url: failureElUrl } = resolveElementMediaById(lesson?.element_incorrect_id);
-                            const successUrl = successElUrl || normalizeMediaUrl(lesson?.url_success || lesson?.success_url);
-                            const failureUrl = failureElUrl || normalizeMediaUrl(lesson?.url_failure || lesson?.failure_url);
+                            
                             if (isCorrect) {
-                              if (successUrl) {
-                                setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success' } }));
+                              // Correct answer: play the element_correct_id video
+                              const correctElementId = lesson?.element_correct_id;
+                              if (correctElementId) {
+                                setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
                               } else {
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: null } }));
                                 if (activeIndex === idx) onNextVideo();
                               }
                             } else {
-                              if (failureUrl) {
-                                setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure' } }));
+                              // Wrong answer: play the element_incorrect_id video
+                              const incorrectElementId = lesson?.element_incorrect_id;
+                              if (incorrectElementId) {
+                                setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
                               } else {
                                 setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
                               }
@@ -765,16 +756,23 @@ const ElementFeed = () => {
                                 const val = String(e.currentTarget.value || '').trim().toLowerCase();
                                 const expected = String(lesson?.fulltext || lesson?.correct_option || '').trim().toLowerCase();
                                 const isCorrect = expected && val === expected;
-                                const { url: successElUrl } = resolveElementMediaById(lesson?.element_correct_id);
-                                const { url: failureElUrl } = resolveElementMediaById(lesson?.element_incorrect_id);
-                                const successUrl = successElUrl || normalizeMediaUrl(lesson?.url_success || lesson?.success_url);
-                                const failureUrl = failureElUrl || normalizeMediaUrl(lesson?.url_failure || lesson?.failure_url);
+                                
                                 if (isCorrect) {
-                                  if (successUrl) setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success' } }));
-                                  else if (activeIndex === idx) onNextVideo();
+                                  // Correct answer: play the element_correct_id video
+                                  const correctElementId = lesson?.element_correct_id;
+                                  if (correctElementId) {
+                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
+                                  } else if (activeIndex === idx) {
+                                    onNextVideo();
+                                  }
                                 } else {
-                                  if (failureUrl) setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure' } }));
-                                  else setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
+                                  // Wrong answer: play the element_incorrect_id video
+                                  const incorrectElementId = lesson?.element_incorrect_id;
+                                  if (incorrectElementId) {
+                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
+                                  } else {
+                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
+                                  }
                                 }
                               }
                             }}
@@ -786,16 +784,23 @@ const ElementFeed = () => {
                               const val = String(input.value || '').trim().toLowerCase();
                               const expected = String(lesson?.fulltext || lesson?.correct_option || '').trim().toLowerCase();
                               const isCorrect = expected && val === expected;
-                              const { url: successElUrl } = resolveElementMediaById(lesson?.element_correct_id);
-                              const { url: failureElUrl } = resolveElementMediaById(lesson?.element_incorrect_id);
-                              const successUrl = successElUrl || normalizeMediaUrl(lesson?.url_success || lesson?.success_url);
-                              const failureUrl = failureElUrl || normalizeMediaUrl(lesson?.url_failure || lesson?.failure_url);
+                              
                               if (isCorrect) {
-                                if (successUrl) setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success' } }));
-                                else if (activeIndex === idx) onNextVideo();
+                                // Correct answer: play the element_correct_id video
+                                const correctElementId = lesson?.element_correct_id;
+                                if (correctElementId) {
+                                  setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId } }));
+                                } else if (activeIndex === idx) {
+                                  onNextVideo();
+                                }
                               } else {
-                                if (failureUrl) setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure' } }));
-                                else setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
+                                // Wrong answer: play the element_incorrect_id video
+                                const incorrectElementId = lesson?.element_incorrect_id;
+                                if (incorrectElementId) {
+                                  setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId } }));
+                                } else {
+                                  setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
+                                }
                               }
                             }}
                             style={{ background: '#111827', color: '#fff', border: 0, borderRadius: 12, padding: '14px 18px', fontWeight: 800 }}
@@ -846,25 +851,26 @@ const ElementFeed = () => {
                       </div>
 
                       {/* Inline retry options when there is no failure video */}
-                      {challengeState[idx]?.status === 'failure' && !normalizeMediaUrl(lesson?.url_failure || lesson?.failure_url) && (
+                      {challengeState[idx]?.status === 'failure' && !lesson?.element_incorrect_id && (
                         <div style={{ marginTop: 12, display: 'flex', gap: 12, justifyContent: 'center' }}>
                           <button
                             onClick={() => {
-                              const prev = Math.max(0, idx - 1);
-                              const node = videoRefs.current[prev]?.closest('[data-snap-section]');
-                              if (node && node.scrollIntoView) node.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                              setActiveIndex(prev);
-                              setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null } }));
+                              // Replay the challenge - reset to idle state
+                              setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null, targetElementId: null } }));
                             }}
                             style={{ background: '#fff', border: 0, borderRadius: 10, padding: '12px 16px', fontWeight: 700 }}
                           >
                             {t('replay') || 'Replay'}
                           </button>
                           <button
-                            onClick={() => setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null } }))}
+                            onClick={() => {
+                              // Continue to next video
+                              setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null, targetElementId: null } }));
+                              if (activeIndex === idx) onNextVideo();
+                            }}
                             style={{ background: '#111827', color: '#fff', border: 0, borderRadius: 10, padding: '12px 16px', fontWeight: 700 }}
                           >
-                            {t('tryAgain') || 'Try again'}
+                            {t('continue') || 'Continue'}
                           </button>
                         </div>
                       )}
@@ -873,10 +879,18 @@ const ElementFeed = () => {
 
                   {/* Success/Failure video overlay */}
                   {(() => {
-                    const successUrl = normalizeMediaUrl(lesson?.url_success || lesson?.success_url);
-                    const failureUrl = normalizeMediaUrl(lesson?.url_failure || lesson?.failure_url);
                     const playing = challengeState[idx]?.playing;
-                    const overlayUrl = playing === 'success' ? successUrl : playing === 'failure' ? failureUrl : '';
+                    const targetElementId = challengeState[idx]?.targetElementId;
+                    
+                    // Find the target element video URL from the lessons array
+                    let overlayUrl = '';
+                    if (playing && targetElementId) {
+                      const targetElement = lessons.find(l => Number(l.id) === Number(targetElementId));
+                      if (targetElement) {
+                        overlayUrl = normalizeMediaUrl(targetElement.url_element);
+                      }
+                    }
+                    
                     return playing && overlayUrl ? (
                     <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999 }} onMouseDown={(e)=>e.stopPropagation()} onTouchStart={(e)=>e.stopPropagation()}>
                       {(() => { try { document.body.style.overflow = 'hidden'; } catch (_) {} return null; })()}
@@ -901,12 +915,12 @@ const ElementFeed = () => {
                         onEnded={() => {
                           try { document.body.style.overflow = ''; } catch (_) {}
                           if (challengeState[idx]?.playing === 'success') {
-                            // Continue to the next video
-                            setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: null } }));
+                            // Success: continue to the next video
+                            setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: null, targetElementId: null } }));
                             if (activeIndex === idx) onNextVideo();
                           } else {
-                            // Failure: allow replay
-                            setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null } }));
+                            // Failure: show replay/continue options
+                            setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null, targetElementId: null } }));
                           }
                         }}
                       />
@@ -924,22 +938,22 @@ const ElementFeed = () => {
                         >
                           <button
                             onClick={() => {
-                              // Replay previous explanatory video
-                              const prev = Math.max(0, idx - 1);
-                              const node = videoRefs.current[prev]?.closest('[data-snap-section]');
-                              if (node && node.scrollIntoView) node.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                              setActiveIndex(prev);
-                              setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null } }));
+                              // Replay the challenge - reset to idle state
+                              setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null, targetElementId: null } }));
                             }}
                             style={{ background: '#fff', border: 0, borderRadius: 10, padding: '12px 16px', fontWeight: 700 }}
                           >
                             {t('replay') || 'Replay'}
                           </button>
                           <button
-                            onClick={() => setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null } }))}
+                            onClick={() => {
+                              // Continue to next video
+                              setChallengeState((p) => ({ ...p, [idx]: { status: 'idle', playing: null, targetElementId: null } }));
+                              if (activeIndex === idx) onNextVideo();
+                            }}
                             style={{ background: '#111827', color: '#fff', border: 0, borderRadius: 10, padding: '12px 16px', fontWeight: 700 }}
                           >
-                            {t('close') || 'Close'}
+                            {t('continue') || 'Continue'}
                           </button>
                         </div>
                       )}

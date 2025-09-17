@@ -136,7 +136,6 @@ const CourseDetail = () => {
           sourcePage: location?.state?.sourcePage,
           lessons: lessons,
           startIndex: nextIndex >= 0 ? nextIndex : 0,
-          forceRotate: true,
           playlistContext: {
             lessons: lessons,
             currentIndex: nextIndex >= 0 ? nextIndex : 0,
@@ -167,11 +166,13 @@ const CourseDetail = () => {
         const next = getNextLesson();
         if (next?.hash_id) {
           const nextIndex = lessons.findIndex(l => l.hash_id === next.hash_id);
-          navigate(`/element/${next.hash_id}`, { 
+          navigate(`/element-feed/${next.hash_id}`, { 
             state: { 
               elementData: next,
               collectionData: collection,
               sourcePage: location?.state?.sourcePage,
+              lessons: lessons,
+              startIndex: nextIndex >= 0 ? nextIndex : 0,
               playlistContext: {
                 lessons: lessons,
                 currentIndex: nextIndex >= 0 ? nextIndex : 0,
@@ -296,7 +297,6 @@ const CourseDetail = () => {
                         sourcePage: location?.state?.sourcePage,
                         lessons: lessons,
                         startIndex: idx,
-                        forceRotate: true,
                         playlistContext: {
                           lessons: lessons,
                           currentIndex: idx,
