@@ -342,3 +342,140 @@
 }
 
 
+/* Desktop: render failure/correct overlay as phone-sized viewport */
+.ef-overlay-fixed {
+  position: fixed;
+  inset: 0;
+  background: rgba(244, 238, 238, 0.9);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ef-overlay-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ef-overlay-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (min-width: 900px) {
+  .ef-overlay-fixed {
+    background: rgba(0,0,0,0.85);
+    padding: 24px;
+  }
+  .ef-overlay-video {
+    width: 420px; /* phone-like width */
+    height: 740px; /* phone-like height */
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+    object-fit: cover;
+    background: #000;
+  }
+  .ef-overlay-stage {
+    width: 420px;
+    height: 740px;
+  }
+}
+
+/* Overlay HUD: progress + time */
+.ef-overlay-hud {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.ef-overlay-progress {
+  height: 4px;
+  background: rgba(255,255,255,0.35);
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.ef-overlay-progress-fill {
+  height: 100%;
+  background: #FF6407;
+  width: 0%;
+  transition: width 150ms linear;
+}
+
+.ef-overlay-time {
+  align-self: flex-start;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+/* Desktop refinements */
+@media (min-width: 1024px) {
+  .ef-back, .ef-mute {
+    top: 24px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .ef-title {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .ef-progress {
+    height: 6px;
+    border-radius: 4px;
+  }
+
+  .ef-control-btn {
+    width: 72px;
+    height: 72px;
+    border-radius: 36px;
+  }
+
+  .ef-skip-indicator {
+    width: 100px;
+    height: 100px;
+    border-radius: 50px;
+  }
+
+  .ef-end-popup-content {
+    max-width: 720px;
+    padding: 24px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+  }
+
+  .ef-end-timer {
+    font-size: 22px;
+    margin-bottom: 28px;
+  }
+
+  .ef-end-buttons {
+    gap: 20px;
+  }
+
+  .ef-end-btn {
+    padding: 14px 24px;
+    font-size: 16px;
+    border-radius: 28px;
+  }
+}
