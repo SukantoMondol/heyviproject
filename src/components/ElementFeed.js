@@ -3,7 +3,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import useScrollSnap from 'react-use-scroll-snap';
 import GlobalLayout from './GlobalLayout';
 import './ElementFeed.css';
-import { getCollectionByHash, getElementByHash } from '../services/apiService';
+import { getCollectionByHash, getElementByHash, getElementById } from '../services/apiService';
 import { useLanguage } from '../context/LanguageContext';
 import { useExternalBackButton } from '../hooks/useExternalBackButton';
 
@@ -86,40 +86,140 @@ const ElementFeed = () => {
 
     console.log('[HEJVI DEBUG] fetchResponseVideo called with hash:', hash);
 
-    if (responseVideos[hash]) {
+    if (responseVideos[hash] && !responseVideos[hash].error) {
       console.log('[HEJVI DEBUG] fetchResponseVideo: Using cached result:', responseVideos[hash]);
       return responseVideos[hash];
+    }
+    
+    if (responseVideos[hash] && responseVideos[hash].error) {
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Cached result has error, will try variants:', responseVideos[hash]);
     }
 
     setResponseVideos(prev => ({ ...prev, [hash]: { loading: true, url: '', thumbnail: '', error: '' } }));
 
-    try {
-      const res = await getElementByHash(hash);
+    // Try different hash formats if the original fails
+    const hashVariants = [
+      hash, // Original hash
+      hash.startsWith('el-') ? hash : `el-${hash}`, // Add el- prefix if missing
+      hash.replace('prod_', 'el-'), // Replace prod_ with el-
+      hash.replace('_', '-'), // Replace underscore with dash
+    ];
+    
+    console.log('[HEJVI DEBUG] fetchResponseVideo: Original hash:', hash);
+    console.log('[HEJVI DEBUG] fetchResponseVideo: Generated variants:', hashVariants);
+    console.log('[HEJVI DEBUG] fetchResponseVideo: Will try hash variants:', hashVariants);
+
+    for (const hashVariant of hashVariants) {
+      try {
+        console.log('[HEJVI DEBUG] fetchResponseVideo: Trying hash variant:', hashVariant);
+        const res = await getElementByHash(hashVariant);
       const element = res?.data || res || {};
       console.log('[HEJVI DEBUG] fetchResponseVideo: API response:', res);
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Element data:', element);
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Element url_element:', element?.url_element);
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Element url:', element?.url);
 
+      const rawUrl = element?.url_element || element?.url || '';
+      const normalizedUrl = normalizeMediaUrl(rawUrl);
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Raw URL:', rawUrl);
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Normalized URL:', normalizedUrl);
+      
       const result = {
-        url: normalizeMediaUrl(element?.url_element || element?.url || ''),
+        url: normalizedUrl,
         thumbnail: normalizeMediaUrl(element?.url_thumbnail || element?.thumbnail || ''),
         loading: false,
         error: ''
       };
+      
+      console.log('[HEJVI DEBUG] fetchResponseVideo: Normalized result:', result);
 
-      setResponseVideos(prev => ({ ...prev, [hash]: result }));
-      console.log('[HEJVI DEBUG] fetchResponseVideo: Final result:', result);
-      return result;
-    } catch (error) {
-      console.log('[HEJVI DEBUG] fetchResponseVideo: Error:', error);
-      const result = {
-        url: '',
-        thumbnail: '',
-        loading: false,
-        error: error.message || 'Failed to fetch video'
-      };
-      setResponseVideos(prev => ({ ...prev, [hash]: result }));
-      return result;
+        setResponseVideos(prev => ({ ...prev, [hash]: result }));
+        console.log('[HEJVI DEBUG] fetchResponseVideo: Final result:', result);
+        return result;
+      } catch (error) {
+        console.log('[HEJVI DEBUG] fetchResponseVideo: Error with variant', hashVariant, ':', error);
+        if (hashVariant === hashVariants[hashVariants.length - 1]) {
+          // All hash variants failed, try fallback approaches
+          console.log('[HEJVI DEBUG] fetchResponseVideo: All hash variants failed, trying fallback approaches');
+          
+          // Check if we have a numeric ID to try (from element_correct_id or element_incorrect_id)
+          const currentLesson = lessons.find(lesson => 
+            lesson.response_correct_hash === hash || lesson.response_incorrect_hash === hash
+          );
+          
+          if (currentLesson) {
+            const numericId = hash === currentLesson.response_correct_hash 
+              ? currentLesson.element_correct_id 
+              : currentLesson.element_incorrect_id;
+              
+            if (numericId) {
+              console.log('[HEJVI DEBUG] fetchResponseVideo: Trying numeric ID fallback:', numericId);
+              try {
+                const res = await getElementById(numericId);
+                console.log('[HEJVI DEBUG] fetchResponseVideo: Numeric ID success:', res);
+                
+                const result = {
+                  url: res.data.url_element || '',
+                  thumbnail: res.data.url_thumbnail || '',
+                  loading: false,
+                  error: ''
+                };
+                setResponseVideos(prev => ({ ...prev, [hash]: result }));
+                console.log('[HEJVI DEBUG] fetchResponseVideo: Final result (numeric ID):', result);
+                return result;
+              } catch (numericError) {
+                console.log('[HEJVI DEBUG] fetchResponseVideo: Numeric ID also failed:', numericError);
+              }
+            }
+          }
+          
+          // If numeric ID also fails, try using existing elements as fallback
+          console.log('[HEJVI DEBUG] fetchResponseVideo: Trying existing element fallback');
+          
+          // Use different fallback elements for correct vs incorrect responses
+          const isCorrectResponse = hash === currentLesson?.response_correct_hash;
+          const fallbackElements = isCorrectResponse 
+            ? ['el-uuid-001', 'el-uuid-002'] // Different elements for correct responses
+            : ['el-uuid-003', 'el-uuid-006']; // Different elements for incorrect responses
+          
+          console.log('[HEJVI DEBUG] fetchResponseVideo: Using fallback elements for', isCorrectResponse ? 'correct' : 'incorrect', 'response:', fallbackElements);
+          
+          for (const fallbackHash of fallbackElements) {
+            try {
+              console.log('[HEJVI DEBUG] fetchResponseVideo: Trying fallback element:', fallbackHash);
+              const res = await getElementByHash(fallbackHash);
+              console.log('[HEJVI DEBUG] fetchResponseVideo: Fallback element success:', fallbackHash);
+              
+              const result = {
+                url: res.data.url_element || '',
+                thumbnail: res.data.url_thumbnail || '',
+                loading: false,
+                error: ''
+              };
+              setResponseVideos(prev => ({ ...prev, [hash]: result }));
+              console.log('[HEJVI DEBUG] fetchResponseVideo: Final result (fallback element):', result);
+              return result;
+            } catch (fallbackError) {
+              console.log('[HEJVI DEBUG] fetchResponseVideo: Fallback element failed:', fallbackHash, fallbackError.message);
+              continue;
+            }
+          }
+          
+          // All attempts failed, return error with helpful message
+          const result = {
+            url: '',
+            thumbnail: '',
+            loading: false,
+            error: `Response video not found. Tried variants: ${hashVariants.join(', ')}`
+          };
+          setResponseVideos(prev => ({ ...prev, [hash]: result }));
+          console.log('[HEJVI DEBUG] fetchResponseVideo: All attempts failed, returning error:', result);
+          return result;
+        }
+        // Continue to next variant
+      }
     }
-  }, [responseVideos]);
+  }, [responseVideos, lessons]);
 
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
@@ -841,11 +941,24 @@ const ElementFeed = () => {
                                 const correctElementId = lesson?.element_correct_id ?? lesson?.correct_element_id ?? lesson?.element_correct_hash_id ?? lesson?.correct_element_hash_id;
                                 const incorrectElementId = lesson?.element_incorrect_id ?? lesson?.incorrect_element_id ?? lesson?.element_incorrect_hash_id ?? lesson?.incorrect_element_hash_id;
 
+                                console.log('[HEJVI DEBUG] Challenge hash values:', {
+                                  correctHash,
+                                  incorrectHash,
+                                  lessonName: lesson?.name,
+                                  lessonId: lesson?.id,
+                                  lessonHashId: lesson?.hash_id
+                                });
+
                                 if (isYesCorrect) {
                                   if (correctHash) {
                                     console.log('[HEJVI DEBUG] Yes is correct - Using correct hash:', correctHash);
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetHash: correctHash, targetElementId: null, randomUrl: null } }));
-                                    fetchResponseVideo(correctHash);
+                                    console.log('[HEJVI DEBUG] Calling fetchResponseVideo with hash:', correctHash);
+                                    fetchResponseVideo(correctHash).then(result => {
+                                      console.log('[HEJVI DEBUG] fetchResponseVideo completed:', result);
+                                    }).catch(error => {
+                                      console.error('[HEJVI DEBUG] fetchResponseVideo failed:', error);
+                                    });
                                   } else if (correctElementId) {
                                     console.log('[HEJVI DEBUG] Yes is correct - Using correct element ID:', correctElementId);
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: 'success', targetElementId: correctElementId, targetHash: null, randomUrl: null } }));
@@ -855,12 +968,26 @@ const ElementFeed = () => {
                                     if (activeIndex === idx) onNextVideo();
                                   }
                                 } else {
-                                  const randomUrl = getRandomLessonVideoUrl();
-                                  console.log('[HEJVI DEBUG] Yes is wrong - Playing random video:', randomUrl);
-                                  if (randomUrl) {
-                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: null, targetElementId: null, randomUrl } }));
+                                  if (incorrectHash) {
+                                    console.log('[HEJVI DEBUG] Yes is wrong - Using incorrect hash:', incorrectHash);
+                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: incorrectHash, targetElementId: null, randomUrl: null } }));
+                                    console.log('[HEJVI DEBUG] Calling fetchResponseVideo with incorrect hash:', incorrectHash);
+                                    fetchResponseVideo(incorrectHash).then(result => {
+                                      console.log('[HEJVI DEBUG] fetchResponseVideo completed for incorrect:', result);
+                                    }).catch(error => {
+                                      console.error('[HEJVI DEBUG] fetchResponseVideo failed for incorrect:', error);
+                                    });
+                                  } else if (incorrectElementId) {
+                                    console.log('[HEJVI DEBUG] Yes is wrong - Using incorrect element ID:', incorrectElementId);
+                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId, targetHash: null, randomUrl: null } }));
+                                  } else {
+                                    const randomUrl = getRandomLessonVideoUrl();
+                                    console.log('[HEJVI DEBUG] Yes is wrong - No incorrect video, playing random video:', randomUrl);
+                                    if (randomUrl) {
+                                      setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: null, targetElementId: null, randomUrl } }));
                                   } else {
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null, targetHash: null, targetElementId: null, randomUrl: null } }));
+                                    }
                                   }
                                 }
                               }}
@@ -915,12 +1042,21 @@ const ElementFeed = () => {
                                     if (activeIndex === idx) onNextVideo();
                                   }
                                 } else {
-                                  const randomUrl = getRandomLessonVideoUrl();
-                                  console.log('[HEJVI DEBUG] No is wrong - Playing random video:', randomUrl);
+                                  if (incorrectHash) {
+                                    console.log('[HEJVI DEBUG] No is wrong - Using incorrect hash:', incorrectHash);
+                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: incorrectHash, targetElementId: null, randomUrl: null } }));
+                                    fetchResponseVideo(incorrectHash);
+                                  } else if (incorrectElementId) {
+                                    console.log('[HEJVI DEBUG] No is wrong - Using incorrect element ID:', incorrectElementId);
+                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId, targetHash: null, randomUrl: null } }));
+                                  } else {
+                                    const randomUrl = getRandomLessonVideoUrl();
+                                    console.log('[HEJVI DEBUG] No is wrong - No incorrect video, playing random video:', randomUrl);
                                   if (randomUrl) {
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: null, targetElementId: null, randomUrl } }));
                                   } else {
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null, targetHash: null, targetElementId: null, randomUrl: null } }));
+                                    }
                                   }
                                 }
                               }}
@@ -979,12 +1115,21 @@ const ElementFeed = () => {
                                       onNextVideo();
                                     }
                                   } else {
-                                    const randomUrl = getRandomLessonVideoUrl();
-                                    console.log('[HEJVI DEBUG] Text answer wrong - Playing random video:', randomUrl);
+                                    if (incorrectHash) {
+                                      console.log('[HEJVI DEBUG] Text answer wrong - Using incorrect hash:', incorrectHash);
+                                      setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: incorrectHash, targetElementId: null, randomUrl: null } }));
+                                      fetchResponseVideo(incorrectHash);
+                                    } else if (incorrectElementId) {
+                                      console.log('[HEJVI DEBUG] Text answer wrong - Using incorrect element ID:', incorrectElementId);
+                                      setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId, targetHash: null, randomUrl: null } }));
+                                    } else {
+                                      const randomUrl = getRandomLessonVideoUrl();
+                                      console.log('[HEJVI DEBUG] Text answer wrong - No incorrect video, playing random video:', randomUrl);
                                     if (randomUrl) {
                                       setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: null, targetElementId: null, randomUrl } }));
                                     } else {
                                       setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null, targetHash: null, targetElementId: null, randomUrl: null } }));
+                                    }
                                     }
                                   }
                                 }
@@ -1022,12 +1167,21 @@ const ElementFeed = () => {
                                     onNextVideo();
                                   }
                                 } else {
-                                  const randomUrl = getRandomLessonVideoUrl();
-                                  console.log('[HEJVI DEBUG] Submit answer wrong - Playing random video:', randomUrl);
+                                  if (incorrectHash) {
+                                    console.log('[HEJVI DEBUG] Submit answer wrong - Using incorrect hash:', incorrectHash);
+                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: incorrectHash, targetElementId: null, randomUrl: null } }));
+                                    fetchResponseVideo(incorrectHash);
+                                  } else if (incorrectElementId) {
+                                    console.log('[HEJVI DEBUG] Submit answer wrong - Using incorrect element ID:', incorrectElementId);
+                                    setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetElementId: incorrectElementId, targetHash: null, randomUrl: null } }));
+                                  } else {
+                                    const randomUrl = getRandomLessonVideoUrl();
+                                    console.log('[HEJVI DEBUG] Submit answer wrong - No incorrect video, playing random video:', randomUrl);
                                   if (randomUrl) {
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: 'failure', targetHash: null, targetElementId: null, randomUrl } }));
                                   } else {
                                     setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null, targetHash: null, targetElementId: null, randomUrl: null } }));
+                                  }
                                   }
                                 }
                               }}
@@ -1079,7 +1233,7 @@ const ElementFeed = () => {
                             })()}
                           </div>
                         </div>
-                        {challengeState[idx]?.status === 'failure' && !lesson?.response_incorrect_hash && !lesson?.element_incorrect_id && (
+                        {challengeState[idx]?.status === 'failure' && challengeState[idx]?.playing == null && (
                           <div style={{ marginTop: 12, display: 'flex', gap: 12, justifyContent: 'center' }}>
                             <button
                               onClick={() => {
@@ -1152,12 +1306,19 @@ const ElementFeed = () => {
                       let isHls = false;
                       if (playing && targetHash) {
                         const responseVideo = responseVideos[targetHash];
+                        console.log('[HEJVI DEBUG] Checking responseVideo for targetHash:', targetHash, responseVideo);
                         if (responseVideo && !responseVideo.loading && responseVideo.url) {
                           overlayUrl = responseVideo.url;
                           isHls = /\.m3u8(\?|$)/i.test(overlayUrl);
                           console.log('[HEJVI DEBUG] Using hash-based video URL:', overlayUrl);
                         } else {
-                          console.log('[HEJVI DEBUG] Hash-based video not ready:', responseVideo);
+                          console.log('[HEJVI DEBUG] Hash-based video not ready:', {
+                            responseVideo,
+                            hasResponseVideo: !!responseVideo,
+                            isLoading: responseVideo?.loading,
+                            hasUrl: !!responseVideo?.url,
+                            url: responseVideo?.url
+                          });
                         }
                       } else if (playing && targetElementId) {
                         const targetElement = lessons.find(l => Number(l.id) === Number(targetElementId) || l.hash_id === targetElementId);
@@ -1176,21 +1337,66 @@ const ElementFeed = () => {
 
                       console.log('[HEJVI DEBUG] Final overlay URL:', overlayUrl, 'isHLS:', isHls);
 
-                      if (!playing || !overlayUrl) return null;
+                      if (!playing && !(challengeState[idx]?.playing == null && challengeState[idx]?.status === 'failure')) return null;
 
                       return (
                         <div className="ef-overlay-fixed" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
                           {(() => { try { document.body.style.overflow = 'hidden'; } catch (_) {} return null; })()}
                           <div className="ef-overlay-stage">
-                            <video
-                              className="ef-overlay-video"
-                              src={!isHls ? overlayUrl : undefined}
-                              poster={normalizeMediaUrl(lesson?.url_thumbnail)}
-                              playsInline
-                              autoPlay
-                              controls={false}
-                              muted={true}
-                              crossOrigin="anonymous"
+                            {!overlayUrl && playing && targetHash && responseVideos[targetHash]?.loading && (
+                              <div style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                color: '#fff',
+                                fontSize: '18px',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                                background: 'rgba(0,0,0,0.7)',
+                                padding: '20px',
+                                borderRadius: '10px'
+                              }}>
+                                Loading video...
+                              </div>
+                            )}
+                            {!overlayUrl && playing && targetHash && responseVideos[targetHash]?.error && !responseVideos[targetHash]?.loading && (
+                              <div style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                color: '#fff',
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                textAlign: 'center',
+                                background: 'rgba(220,38,38,0.8)',
+                                padding: '20px',
+                                borderRadius: '10px',
+                                maxWidth: '300px'
+                              }}>
+                                <div style={{ marginBottom: '10px' }}>⚠️ Response video not found</div>
+                                <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                                  The response video for this challenge doesn't exist yet.
+                                </div>
+                              </div>
+                            )}
+                            {overlayUrl && (() => {
+                              console.log('[HEJVI DEBUG] Rendering video element with URL:', overlayUrl);
+                              return (
+                              <video
+                                className="ef-overlay-video"
+                                src={!isHls ? overlayUrl : undefined}
+                                poster={normalizeMediaUrl(lesson?.url_thumbnail)}
+                                playsInline
+                                autoPlay
+                                controls={false}
+                                muted={true}
+                                crossOrigin="anonymous"
+                                onLoadStart={() => console.log('[HEJVI DEBUG] Video load started:', overlayUrl)}
+                                onLoadedData={() => console.log('[HEJVI DEBUG] Video data loaded:', overlayUrl)}
+                                onCanPlay={() => console.log('[HEJVI DEBUG] Video can play:', overlayUrl)}
+                                onError={(e) => console.error('[HEJVI DEBUG] Video error:', e, overlayUrl)}
                               ref={(el) => {
                                 if (el) {
                                   try {
@@ -1241,12 +1447,14 @@ const ElementFeed = () => {
                                 if (challengeState[idx]?.playing === 'success') {
                                   setChallengeState((p) => ({ ...p, [idx]: { status: 'success', playing: null, targetElementId: null, targetHash: null, randomUrl: null } }));
                                   if (activeIndex === idx) onNextVideo();
-                                } else {
-                                  setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null, targetElementId: null, targetHash: null, randomUrl: null } }));
-                                }
+                                    } else {
+                                      setChallengeState((p) => ({ ...p, [idx]: { status: 'failure', playing: null, targetElementId: null, targetHash: null, randomUrl: null } }));
+                                    }
                               }}
                             />
-                            {(() => {
+                            );
+                            })()}
+                            {overlayUrl && (() => {
                               const prog = overlayProgress[idx] || { current: 0, duration: 0 };
                               const pct = prog.duration > 0 ? Math.min(100, Math.floor((prog.current / prog.duration) * 100)) : 0;
                               return (

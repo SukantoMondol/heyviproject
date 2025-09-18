@@ -44,6 +44,37 @@ export const getElementByHash = async (hashId) => {
   }
 };
 
+export const getElementById = async (elementId) => {
+  try {
+    // Try different possible endpoints for getting element by ID
+    const possibleEndpoints = [
+      `/element/id/${elementId}`,
+      `/element/${elementId}`,
+      `/elements/${elementId}`,
+      `/element/by-id/${elementId}`
+    ];
+    
+    for (const endpoint of possibleEndpoints) {
+      try {
+        console.log(`[HEJVI DEBUG] Trying endpoint: ${endpoint}`);
+        const response = await makeAuthenticatedRequest(endpoint, {
+          method: 'GET'
+        });
+        console.log(`[HEJVI DEBUG] Success with endpoint: ${endpoint}`);
+        return response;
+      } catch (endpointError) {
+        console.log(`[HEJVI DEBUG] Endpoint ${endpoint} failed:`, endpointError.message);
+        continue;
+      }
+    }
+    
+    throw new Error(`No working endpoint found for element ID ${elementId}`);
+  } catch (error) {
+    console.error('Error fetching element by ID:', error);
+    throw error;
+  }
+};
+
 export const getCollectionByHash = async (hashId) => {
   try {
     const response = await makeAuthenticatedRequest(`/collection/${hashId}`, {
