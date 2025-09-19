@@ -422,6 +422,8 @@ const ElementFeed = () => {
       if (!(vid instanceof HTMLVideoElement)) return;
       try {
         if (i === activeIndex) {
+          // Always start video from the beginning when it becomes active
+          vid.currentTime = 0;
           vid.play().catch(() => {});
         } else {
           vid.pause();
@@ -787,7 +789,7 @@ const ElementFeed = () => {
       });
 
       if (returnToChallenge && Number(lesson?.type) !== 3) {
-        console.log('[HEJVI DEBUG] Finished replay target, showing end popup before returning to challenge', returnToChallenge);
+        console.log('[HEJVI DEBUG] Finished replay target, showing end popup before going to next video', returnToChallenge);
         setShowEndPopup(true);
         setEndPopupTimer(3);
         return;
@@ -835,17 +837,9 @@ const ElementFeed = () => {
       setEndPopupTimer(3);
       setTimeout(() => {
         if (returnToChallenge) {
-          const target = Math.min(Math.max(0, Number(returnToChallenge.targetIdx || 0)), (lessons || []).length - 1);
-          console.log('[HEJVI DEBUG] Returning to challenge at index', target);
-          try {
-            setActiveIndex(target);
-            const section = videoRefs.current[target]?.closest('[data-snap-section]');
-            if (section) {
-              try { section.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) {}
-            }
-          } finally {
-            setReturnToChallenge(null);
-          }
+          console.log('[HEJVI DEBUG] Replay completed, going to next video instead of returning to challenge');
+          setReturnToChallenge(null);
+          onNextVideo();
         } else {
           onNextVideo();
         }
